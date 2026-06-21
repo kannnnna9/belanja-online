@@ -85,7 +85,12 @@ function wireEvents() {
 
   // Klik backdrop untuk menutup sheet
   document.querySelectorAll('.sheet-backdrop').forEach((bd) => {
-    bd.addEventListener('click', (e) => { if (e.target === bd) bd.hidden = true; });
+    bd.addEventListener('click', (e) => {
+      if (e.target !== bd) return;
+      bd.hidden = true;
+      // Tutup hasil scan via backdrop saat di kamera → nyalakan lagi utk jepret ulang.
+      if (bd.id === 'sheet-result' && !$('screen-camera').hidden) startCamera();
+    });
   });
 }
 
@@ -157,6 +162,16 @@ function stopCamera() {
   }
 }
 
+// Matikan kamera tapi biarkan frame terakhir tetap tampil (membeku).
+// Dipakai saat jepret: kamera tak perlu jalan di latar selama loading scan.
+function freezeCamera() {
+  if (stream) {
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+    // sengaja TIDAK reset srcObject supaya frame terakhir membeku di layar
+  }
+}
+
 function capture() {
   const video = $('video');
   if (!video.videoWidth) {
@@ -172,6 +187,7 @@ function capture() {
   canvas.height = Math.round(video.videoHeight * scale);
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
   lastShot = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  freezeCamera(); // matikan kamera setelah jepret; nyalakan lagi hanya bila jepret ulang
   scanLabel(lastShot);
 }
 
@@ -294,7 +310,9 @@ function addToCart() {
 function retryScan() {
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
-  // Layar di bawah sheet (kamera atau dashboard) tetap; user bisa ulang/lanjut.
+  // Kalau masih di layar kamera, hidupkan lagi supaya bisa jepret ulang.
+  // (Kalau hasil ini dari Input Manual di dashboard, kamera tak disentuh.)
+  if (!$('screen-camera').hidden) startCamera();
 }
 
 /* ============================================================
