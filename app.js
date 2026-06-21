@@ -215,17 +215,33 @@ function capture() {
 /* ============================================================
    PANGGIL GEMINI
    ============================================================ */
+// Timeout per percobaan (ms). Lonjakan cold-start free-tier (8–16s) dipotong
+// di percobaan-1; retry biasanya mendarat di instance hangat (~2s). Percobaan-2
+// diberi tenggang lebih panjang agar tak gampang menyerah saat memang lambat.
+const SCAN_TIMEOUTS = [6000, 12000];
+
 async function scanLabel(base64) {
   openSheet('overlay-loading');
-  // [DIAGNOSTIK SEMENTARA] ukur waktu request + ukuran payload, tampilkan
-  // di sheet hasil supaya kebaca di HP. Hapus setelah selesai mengukur.
+  // [DIAGNOSTIK SEMENTARA] ukur waktu request + ukuran payload + jumlah
+  // percobaan (x1/x2), tampilkan di sheet hasil. Hapus setelah selesai mengukur.
   const kb = Math.round((base64.length * 3 / 4) / 1024);
   const t0 = performance.now();
+  let attempts = 0;
   try {
-    const result = await callGemini(base64);
-    const s = ((performance.now() - t0) / 1000).toFixed(1);
-    closeSheet('overlay-loading');
-    showResult(result.nama, result.harga, `Hasil Scan · ${s}s · ${kb}KB`);
+    for (let i = 0; i < SCAN_TIMEOUTS.length; i++) {
+      attempts++;
+      try {
+        const result = await callGemini(base64, SCAN_TIMEOUTS[i]);
+        const s = ((performance.now() - t0) / 1000).toFixed(1);
+        closeSheet('overlay-loading');
+        showResult(result.nama, result.harga, `Hasil Scan · ${s}s · ${kb}KB · x${attempts}`);
+        return;
+      } catch (e) {
+        // Error permanen (key/kuota/format) atau percobaan terakhir → menyerah.
+        // Selain itu (timeout/jaringan/5xx) → coba sekali lagi.
+        if (e.permanent || i === SCAN_TIMEOUTS.length - 1) throw e;
+      }
+    }
   } catch (e) {
     const s = ((performance.now() - t0) / 1000).toFixed(1);
     closeSheet('overlay-loading');
@@ -233,7 +249,7 @@ async function scanLabel(base64) {
     // dan tampilkan pesan error ASLI di dalam sheet (bukan di #cam-error
     // yang ketutup sheet) supaya penyebab gagal kelihatan.
     showResult('', '', 'Scan Gagal');
-    showResultError(`Gagal (${s}s, ${kb}KB): ` + e.message);
+    showResultError(`Gagal (${s}s, ${kb}KB, x${attempts}): ` + e.message);
   }
 }
 
@@ -243,7 +259,7 @@ function showResultError(msg) {
   el.hidden = false;
 }
 
-async function callGemini(base64) {
+async function callGemini(base64, timeoutMs) {
   const url = `${API_BASE}/${MODEL}:generateContent`;
   const body = {
     contents: [
@@ -264,16 +280,30 @@ async function callGemini(base64) {
     },
   };
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // Key dikirim via header (wajib untuk key format baru "AQ.",
-      // dan tetap kompatibel dengan key lama "AIza").
-      'x-goog-api-key': getKey(),
-    },
-    body: JSON.stringify(body),
-  });
+  // Batalkan request bila melewati timeoutMs (lawan cold-start free-tier).
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Key dikirim via header (wajib untuk key format baru "AQ.",
+        // dan tetap kompatibel dengan key lama "AIza").
+        'x-goog-api-key': getKey(),
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    // AbortError (timeout) atau error jaringan → sementara, boleh di-retry.
+    const err = new Error(e.name === 'AbortError' ? `timeout > ${timeoutMs / 1000}s` : e.message);
+    err.permanent = false;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
@@ -281,7 +311,11 @@ async function callGemini(base64) {
       const j = await res.json();
       if (j.error && j.error.message) msg = j.error.message;
     } catch (_) {}
-    throw new Error(msg);
+    const err = new Error(msg);
+    // 4xx selain 429 = permanen (key/referrer/format) → jangan retry.
+    // 429 (kuota) & 5xx (server) = sementara → boleh retry.
+    err.permanent = res.status >= 400 && res.status < 500 && res.status !== 429;
+    throw err;
   }
 
   const data = await res.json();
