@@ -7,12 +7,15 @@
 'use strict';
 
 /* ---------- Konfigurasi ----------
-   MODEL pakai alias 'gemini-flash-latest' supaya selalu menunjuk ke
-   model Flash terbaru yang masih punya free tier — tidak ikut mati
-   saat Google men-deprecate versi tertentu (mis. gemini-2.0-flash
-   dimatikan 1 Juni 2026 → free tier-nya jadi limit:0).
-   Mau dipatok ke versi tetap? Ganti ke 'gemini-2.5-flash-lite'. */
-const MODEL = 'gemini-flash-latest';
+   MODEL pakai alias 'gemini-flash-lite-latest' (varian Flash-Lite, latensi
+   rendah, cocok untuk tugas ringan baca 1 label) supaya selalu menunjuk ke
+   Flash-Lite terbaru tanpa ikut mati saat Google men-deprecate versi tertentu
+   (alias di-hot-swap dengan notice 2 minggu; mis. gemini-2.0-flash dimatikan
+   1 Juni 2026 → free tier-nya jadi limit:0).
+   Diuji menggantikan 'gemini-flash-latest' (Flash penuh) karena bottleneck
+   scan terbukti di inferensi model, bukan jaringan (payload cuma ~55KB tapi
+   2–3,4s di WiFi stabil). Mau akurasi maksimal lagi? balik ke 'gemini-flash-latest'. */
+const MODEL = 'gemini-flash-lite-latest';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
