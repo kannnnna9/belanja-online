@@ -214,17 +214,23 @@ function capture() {
    ============================================================ */
 async function scanLabel(base64) {
   openSheet('overlay-loading');
+  // [DIAGNOSTIK SEMENTARA] ukur waktu request + ukuran payload, tampilkan
+  // di sheet hasil supaya kebaca di HP. Hapus setelah selesai mengukur.
+  const kb = Math.round((base64.length * 3 / 4) / 1024);
+  const t0 = performance.now();
   try {
     const result = await callGemini(base64);
+    const s = ((performance.now() - t0) / 1000).toFixed(1);
     closeSheet('overlay-loading');
-    showResult(result.nama, result.harga);
+    showResult(result.nama, result.harga, `Hasil Scan · ${s}s · ${kb}KB`);
   } catch (e) {
+    const s = ((performance.now() - t0) / 1000).toFixed(1);
     closeSheet('overlay-loading');
     // Tetap buka sheet hasil supaya user bisa isi manual,
     // dan tampilkan pesan error ASLI di dalam sheet (bukan di #cam-error
     // yang ketutup sheet) supaya penyebab gagal kelihatan.
     showResult('', '', 'Scan Gagal');
-    showResultError('Gagal membaca label: ' + e.message);
+    showResultError(`Gagal (${s}s, ${kb}KB): ` + e.message);
   }
 }
 
