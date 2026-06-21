@@ -183,11 +183,18 @@ async function scanLabel(base64) {
     showResult(result.nama, result.harga);
   } catch (e) {
     closeSheet('overlay-loading');
-    // Tetap buka sheet hasil supaya user bisa isi manual
-    showResult('', '');
-    $('cam-error').textContent = 'Gagal membaca label: ' + e.message + '. Isi manual atau ulangi.';
-    $('cam-error').hidden = false;
+    // Tetap buka sheet hasil supaya user bisa isi manual,
+    // dan tampilkan pesan error ASLI di dalam sheet (bukan di #cam-error
+    // yang ketutup sheet) supaya penyebab gagal kelihatan.
+    showResult('', '', 'Scan Gagal');
+    showResultError('Gagal membaca label: ' + e.message);
   }
+}
+
+function showResultError(msg) {
+  const el = $('res-error');
+  el.textContent = msg + ' — isi manual atau ulangi.';
+  el.hidden = false;
 }
 
 async function callGemini(base64) {
@@ -258,6 +265,7 @@ function parseResult(text) {
    ============================================================ */
 function showResult(nama, harga, title) {
   $('result-title').textContent = title || 'Hasil Scan';
+  $('res-error').hidden = true; // bersihkan error lama
   $('res-nama').value = nama;
   $('res-harga').value = harga;
   openSheet('sheet-result');
