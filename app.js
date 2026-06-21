@@ -19,7 +19,7 @@ const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v0.2.2';
+const APP_VERSION = 'v0.3.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',

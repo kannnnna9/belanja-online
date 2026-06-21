@@ -5,6 +5,23 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.3.0] - 2026-06-21
+
+### Added
+
+- Riwayat belanja tersimpan di `localStorage` (`bco_history`). Tiap kali
+  "Selesai", sesi belanja dicatat (tanggal, jumlah item, total). Halaman
+  Riwayat menampilkan daftar sesi; ketuk satu sesi untuk lihat detail item,
+  dan ada tombol "Hapus Riwayat". Data terpisah dari fungsi scan. ([674a20a])
+- Edit item di keranjang: ketuk baris item untuk ubah nama dan harga, total
+  diperbarui otomatis. ([674a20a])
+
+### Changed
+
+- Area scan kamera kini kotak horizontal rasio 5:3 di tengah layar dengan
+  border aksen dan sudut melengkung; area di luarnya digelapkan. Aplikasi
+  tetap portrait, hanya kotak scan yang landscape. ([674a20a])
+
 ## [0.2.2] - 2026-06-21
 
 ### Changed
@@ -48,6 +65,7 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
+[0.3.0]: https://github.com/kannnnna9/belanja-online/compare/ede8107...674a20a
 [0.2.2]: https://github.com/kannnnna9/belanja-online/compare/cba4120...ede8107
 [0.2.1]: https://github.com/kannnnna9/belanja-online/compare/c05cd6d...cba4120
 [0.2.0]: https://github.com/kannnnna9/belanja-online/compare/5fd5685...c05cd6d
@@ -62,3 +80,4 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 [71d6ad3]: https://github.com/kannnnna9/belanja-online/commit/71d6ad3
 [9160343]: https://github.com/kannnnna9/belanja-online/commit/9160343
 [ede8107]: https://github.com/kannnnna9/belanja-online/commit/ede8107
+[674a20a]: https://github.com/kannnnna9/belanja-online/commit/674a20a
