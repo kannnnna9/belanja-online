@@ -34,16 +34,35 @@
     </div>
   </section>
 
+  <!-- ============ HALAMAN DASHBOARD (KERANJANG) ============ -->
+  <section id="screen-dashboard" class="screen" hidden>
+    <header class="topbar">
+      <h2 class="topbar-title">Keranjang</h2>
+      <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
+    </header>
+
+    <ul id="cart-list" class="cart-list"></ul>
+    <p id="cart-empty" class="empty">Keranjang masih kosong.<br />Tap “Tambah Item” untuk mulai scan.</p>
+
+    <div class="dash-foot">
+      <div class="total-row">
+        <span>Total</span>
+        <strong id="cart-total">Rp 0</strong>
+      </div>
+      <button id="btn-add-item" class="btn btn-primary">📷 Tambah Item</button>
+      <div class="dash-foot-row">
+        <button id="btn-manual" class="btn btn-ghost" type="button">Input Manual</button>
+        <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ HALAMAN KAMERA / SCAN ============ -->
   <section id="screen-camera" class="screen" hidden>
     <header class="topbar">
+      <button id="btn-back" class="icon-btn" type="button" aria-label="Kembali">←</button>
       <h2 class="topbar-title">Scan Label</h2>
-      <div class="topbar-actions">
-        <button id="btn-open-cart" class="chip" type="button">
-          🛒 <span id="cart-count">0</span>
-        </button>
-        <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
-      </div>
+      <span class="topbar-spacer"></span>
     </header>
 
     <div class="cam-wrap">
@@ -65,36 +84,17 @@
     <p>Membaca label…</p>
   </div>
 
-  <!-- ============ SHEET: HASIL SCAN (EDIT) ============ -->
+  <!-- ============ SHEET: HASIL SCAN / INPUT MANUAL ============ -->
   <div id="sheet-result" class="sheet-backdrop" hidden>
     <div class="sheet">
-      <h3 class="sheet-title">Hasil Scan</h3>
+      <h3 class="sheet-title" id="result-title">Hasil Scan</h3>
       <label class="field-label" for="res-nama">Nama Barang</label>
       <input id="res-nama" type="text" class="inp" placeholder="Nama barang" />
       <label class="field-label" for="res-harga">Harga (Rp)</label>
       <input id="res-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
       <div class="sheet-actions">
-        <button id="btn-retry" class="btn btn-ghost" type="button">Ulangi</button>
+        <button id="btn-retry" class="btn btn-ghost" type="button">Batal</button>
         <button id="btn-add" class="btn btn-primary" type="button">Tambah ke Keranjang</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ SHEET: KERANJANG ============ -->
-  <div id="sheet-cart" class="sheet-backdrop" hidden>
-    <div class="sheet sheet-tall">
-      <div class="sheet-head">
-        <h3 class="sheet-title">Keranjang</h3>
-        <button class="icon-btn" type="button" data-close="sheet-cart" aria-label="Tutup">✕</button>
-      </div>
-      <ul id="cart-list" class="cart-list"></ul>
-      <p id="cart-empty" class="empty">Keranjang masih kosong.</p>
-      <div class="cart-foot">
-        <div class="total-row">
-          <span>Total</span>
-          <strong id="cart-total">Rp 0</strong>
-        </div>
-        <button id="btn-finish" class="btn btn-primary" type="button">Selesai</button>
       </div>
     </div>
   </div>

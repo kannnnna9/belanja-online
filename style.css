@@ -266,6 +266,32 @@ body {
 .shutter:active { transform: scale(.92); }
 
 /* ============================================================
+   DASHBOARD
+   ============================================================ */
+.topbar-spacer { width: 40px; }
+
+#screen-dashboard .cart-list {
+  padding: 0 18px;
+  margin: 8px 0;
+}
+
+.dash-foot {
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+}
+.dash-foot .total-row { margin-bottom: 14px; }
+.dash-foot-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+.dash-foot-row .btn {
+  width: auto;
+  flex: 1;
+}
+
+/* ============================================================
    OVERLAY LOADING
    ============================================================ */
 .overlay {

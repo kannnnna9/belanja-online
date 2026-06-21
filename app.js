@@ -41,7 +41,7 @@ function closeSheet(id) { $(id).hidden = true; }
 document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
   if (getKey()) {
-    enterCamera();
+    enterDashboard();
   } else {
     showScreen('screen-setup');
   }
@@ -54,17 +54,19 @@ function wireEvents() {
     if (e.key === 'Enter') saveKey();
   });
 
-  // Kamera
-  $('btn-capture').addEventListener('click', capture);
-  $('btn-open-cart').addEventListener('click', () => { renderCart(); openSheet('sheet-cart'); });
+  // Dashboard
+  $('btn-add-item').addEventListener('click', openCamera);
+  $('btn-manual').addEventListener('click', inputManual);
+  $('btn-finish').addEventListener('click', finishShopping);
   $('btn-settings').addEventListener('click', () => openSheet('sheet-settings'));
 
-  // Hasil scan
+  // Kamera
+  $('btn-capture').addEventListener('click', capture);
+  $('btn-back').addEventListener('click', enterDashboard);
+
+  // Hasil scan / input manual
   $('btn-add').addEventListener('click', addToCart);
   $('btn-retry').addEventListener('click', retryScan);
-
-  // Keranjang
-  $('btn-finish').addEventListener('click', finishShopping);
 
   // Ringkasan
   $('btn-close-summary').addEventListener('click', () => closeSheet('sheet-summary'));
@@ -99,7 +101,7 @@ function saveKey() {
   }
   localStorage.setItem(KEY_STORAGE, val);
   err.hidden = true;
-  enterCamera();
+  enterDashboard();
 }
 
 function changeKey() {
@@ -110,14 +112,22 @@ function changeKey() {
 }
 
 /* ============================================================
-   KAMERA
+   NAVIGASI
    ============================================================ */
-function enterCamera() {
-  showScreen('screen-camera');
+function enterDashboard() {
+  stopCamera();
+  showScreen('screen-dashboard');
   renderCart();
+}
+
+function openCamera() {
+  showScreen('screen-camera');
   startCamera();
 }
 
+/* ============================================================
+   KAMERA
+   ============================================================ */
 async function startCamera() {
   const errBox = $('cam-error');
   errBox.hidden = true;
@@ -246,10 +256,16 @@ function parseResult(text) {
 /* ============================================================
    HASIL SCAN
    ============================================================ */
-function showResult(nama, harga) {
+function showResult(nama, harga, title) {
+  $('result-title').textContent = title || 'Hasil Scan';
   $('res-nama').value = nama;
   $('res-harga').value = harga;
   openSheet('sheet-result');
+}
+
+// Tombol "Input Manual" di dashboard → sheet kosong, tanpa kamera.
+function inputManual() {
+  showResult('', '', 'Input Manual');
 }
 
 function addToCart() {
@@ -261,13 +277,13 @@ function addToCart() {
   cart.push({ nama, harga });
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
-  renderCart();
+  enterDashboard(); // selesai tambah → kembali ke dashboard
 }
 
 function retryScan() {
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
-  // kembali ke kamera; user bisa jepret ulang
+  // Layar di bawah sheet (kamera atau dashboard) tetap; user bisa ulang/lanjut.
 }
 
 /* ============================================================
@@ -276,7 +292,8 @@ function retryScan() {
 function cartTotal() { return cart.reduce((s, it) => s + it.harga, 0); }
 
 function renderCart() {
-  $('cart-count').textContent = cart.length;
+  const cc = $('cart-count');
+  if (cc) cc.textContent = cart.length;
   $('cart-total').textContent = rupiah(cartTotal());
 
   const list = $('cart-list');
@@ -312,7 +329,6 @@ function removeItem(i) {
    ============================================================ */
 function finishShopping() {
   if (cart.length === 0) return;
-  closeSheet('sheet-cart');
 
   const list = $('summary-list');
   list.innerHTML = '';
