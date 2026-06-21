@@ -7,9 +7,12 @@
 'use strict';
 
 /* ---------- Konfigurasi ----------
-   Ganti MODEL di sini bila ingin pakai model lain
-   (mis. 'gemini-3-flash' begitu tersedia di akunmu). */
-const MODEL = 'gemini-2.0-flash';
+   MODEL pakai alias 'gemini-flash-latest' supaya selalu menunjuk ke
+   model Flash terbaru yang masih punya free tier — tidak ikut mati
+   saat Google men-deprecate versi tertentu (mis. gemini-2.0-flash
+   dimatikan 1 Juni 2026 → free tier-nya jadi limit:0).
+   Mau dipatok ke versi tetap? Ganti ke 'gemini-2.5-flash-lite'. */
+const MODEL = 'gemini-flash-latest';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 
