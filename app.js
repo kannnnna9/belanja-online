@@ -15,6 +15,7 @@
 const MODEL = 'gemini-flash-latest';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
+const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
@@ -30,6 +31,8 @@ const PROMPT = [
 let cart = [];          // [{ nama, harga }]
 let stream = null;      // MediaStream kamera aktif
 let lastShot = null;    // base64 JPEG hasil jepret terakhir (untuk "Ulangi")
+let editIndex = -1;     // indeks item keranjang yang sedang diedit (-1 = tidak ada)
+let sessionSaved = false; // true bila komposisi keranjang ini sudah masuk riwayat
 
 /* ---------- Util DOM ---------- */
 const $ = (id) => document.getElementById(id);
@@ -68,6 +71,15 @@ function wireEvents() {
   $('btn-manual').addEventListener('click', inputManual);
   $('btn-finish').addEventListener('click', finishShopping);
   $('btn-settings').addEventListener('click', () => openSheet('sheet-settings'));
+  $('btn-history').addEventListener('click', openHistory);
+
+  // Riwayat
+  $('btn-history-back').addEventListener('click', enterDashboard);
+  $('btn-clear-history').addEventListener('click', clearHistory);
+
+  // Edit item keranjang
+  $('btn-edit-save').addEventListener('click', saveEdit);
+  $('btn-edit-cancel').addEventListener('click', () => closeSheet('sheet-edit'));
 
   // Kamera
   $('btn-capture').addEventListener('click', capture);
@@ -308,6 +320,7 @@ function addToCart() {
   if (isNaN(harga)) { $('res-harga').focus(); return; }
 
   cart.push({ nama, harga });
+  sessionSaved = false; // keranjang berubah → boleh dicatat ulang
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
   enterDashboard(); // selesai tambah → kembali ke dashboard
@@ -345,10 +358,13 @@ function renderCart() {
     const li = document.createElement('li');
     li.className = 'cart-item';
     li.innerHTML = `
-      <span class="ci-name"></span>
-      <span class="ci-price">${rupiah(it.harga)}</span>
+      <button class="ci-tap" type="button">
+        <span class="ci-name"></span>
+        <span class="ci-price">${rupiah(it.harga)}</span>
+      </button>
       <button class="ci-del" aria-label="Hapus">🗑</button>`;
     li.querySelector('.ci-name').textContent = it.nama;
+    li.querySelector('.ci-tap').addEventListener('click', () => openEdit(i));
     li.querySelector('.ci-del').addEventListener('click', () => removeItem(i));
     list.appendChild(li);
   });
@@ -356,7 +372,29 @@ function renderCart() {
 
 function removeItem(i) {
   cart.splice(i, 1);
+  sessionSaved = false; // keranjang berubah → boleh dicatat ulang
   renderCart();
+}
+
+/* ---------- Edit item keranjang ---------- */
+function openEdit(i) {
+  editIndex = i;
+  $('edit-nama').value = cart[i].nama;
+  $('edit-harga').value = cart[i].harga;
+  openSheet('sheet-edit');
+}
+
+function saveEdit() {
+  if (editIndex < 0) return;
+  const nama = $('edit-nama').value.trim();
+  const harga = parseInt($('edit-harga').value, 10);
+  if (!nama) { $('edit-nama').focus(); return; }
+  if (isNaN(harga)) { $('edit-harga').focus(); return; }
+  cart[editIndex] = { nama, harga };
+  editIndex = -1;
+  sessionSaved = false;
+  closeSheet('sheet-edit');
+  renderCart(); // total ikut diperbarui
 }
 
 /* ============================================================
@@ -364,6 +402,12 @@ function removeItem(i) {
    ============================================================ */
 function finishShopping() {
   if (cart.length === 0) return;
+
+  // Simpan sesi ini ke riwayat sekali per komposisi keranjang.
+  if (!sessionSaved) {
+    recordSession();
+    sessionSaved = true;
+  }
 
   const list = $('summary-list');
   list.innerHTML = '';
@@ -383,6 +427,95 @@ function finishShopping() {
 function newShopping() {
   cart = [];
   lastShot = null;
+  sessionSaved = false;
   closeSheet('sheet-summary');
   renderCart();
+}
+
+/* ============================================================
+   RIWAYAT BELANJA (localStorage)
+   Data riwayat TERPISAH dari fungsi scan — bila kosong/rusak,
+   scan & keranjang tetap berjalan normal.
+   ============================================================ */
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_STORAGE)) || []; }
+  catch (_) { return []; }
+}
+
+function recordSession() {
+  const list = loadHistory();
+  list.unshift({
+    ts: Date.now(),
+    total: cartTotal(),
+    items: cart.map((it) => ({ nama: it.nama, harga: it.harga })),
+  });
+  localStorage.setItem(HISTORY_STORAGE, JSON.stringify(list));
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  const tgl = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const jam = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return `${tgl} · ${jam}`;
+}
+
+function openHistory() {
+  stopCamera();
+  showScreen('screen-history');
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = $('history-list');
+  const empty = $('history-empty');
+  const data = loadHistory();
+  list.innerHTML = '';
+
+  if (data.length === 0) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  data.forEach((sesi, i) => {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    li.innerHTML = `
+      <div class="hi-info">
+        <span class="hi-date"></span>
+        <span class="hi-count"></span>
+      </div>
+      <span class="hi-total">${rupiah(sesi.total)}</span>`;
+    li.querySelector('.hi-date').textContent = fmtDate(sesi.ts);
+    li.querySelector('.hi-count').textContent = sesi.items.length + ' item';
+    li.addEventListener('click', () => showHistoryDetail(i));
+    list.appendChild(li);
+  });
+}
+
+function showHistoryDetail(i) {
+  const sesi = loadHistory()[i];
+  if (!sesi) return;
+
+  const list = $('hist-detail-list');
+  list.innerHTML = '';
+  sesi.items.forEach((it) => {
+    const li = document.createElement('li');
+    li.className = 'cart-item';
+    li.innerHTML = `<span class="ci-name"></span><span class="ci-price">${rupiah(it.harga)}</span>`;
+    li.querySelector('.ci-name').textContent = it.nama;
+    list.appendChild(li);
+  });
+
+  $('hist-detail-title').textContent = fmtDate(sesi.ts);
+  $('hist-detail-count').textContent = sesi.items.length;
+  $('hist-detail-total').textContent = rupiah(sesi.total);
+  openSheet('sheet-history-detail');
+}
+
+function clearHistory() {
+  if (loadHistory().length === 0) return;
+  if (!confirm('Hapus semua riwayat belanja? Tindakan ini tidak bisa dibatalkan.')) return;
+  localStorage.removeItem(HISTORY_STORAGE);
+  renderHistory();
 }

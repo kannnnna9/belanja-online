@@ -38,7 +38,10 @@
   <section id="screen-dashboard" class="screen" hidden>
     <header class="topbar">
       <h2 class="topbar-title">Keranjang</h2>
-      <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
+      <div class="topbar-actions">
+        <button id="btn-history" class="icon-btn" type="button" aria-label="Riwayat">🕘</button>
+        <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
+      </div>
     </header>
 
     <ul id="cart-list" class="cart-list"></ul>
@@ -55,6 +58,18 @@
         <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
       </div>
     </div>
+  </section>
+
+  <!-- ============ HALAMAN RIWAYAT ============ -->
+  <section id="screen-history" class="screen" hidden>
+    <header class="topbar">
+      <button id="btn-history-back" class="icon-btn" type="button" aria-label="Kembali">←</button>
+      <h2 class="topbar-title">Riwayat Belanja</h2>
+      <button id="btn-clear-history" class="icon-btn" type="button" aria-label="Hapus Riwayat">🗑</button>
+    </header>
+
+    <ul id="history-list" class="history-list"></ul>
+    <p id="history-empty" class="empty">Belum ada riwayat belanja.<br />Selesaikan satu belanja untuk menyimpannya di sini.</p>
   </section>
 
   <!-- ============ HALAMAN KAMERA / SCAN ============ -->
@@ -126,6 +141,36 @@
       <p class="settings-note">API key tersimpan di browser ini saja.</p>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
       <p class="version">BelanjaCatat Online · <span id="app-version">v0.2.2</span> · tanpa backend</p>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: EDIT ITEM KERANJANG ============ -->
+  <div id="sheet-edit" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <h3 class="sheet-title">Edit Item</h3>
+      <label class="field-label" for="edit-nama">Nama Barang</label>
+      <input id="edit-nama" type="text" class="inp" placeholder="Nama barang" />
+      <label class="field-label" for="edit-harga">Harga (Rp)</label>
+      <input id="edit-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
+      <div class="sheet-actions">
+        <button id="btn-edit-cancel" class="btn btn-ghost" type="button">Batal</button>
+        <button id="btn-edit-save" class="btn btn-primary" type="button">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: DETAIL RIWAYAT ============ -->
+  <div id="sheet-history-detail" class="sheet-backdrop" hidden>
+    <div class="sheet sheet-tall">
+      <div class="sheet-head">
+        <h3 class="sheet-title" id="hist-detail-title">Detail Belanja</h3>
+        <button class="icon-btn" type="button" data-close="sheet-history-detail" aria-label="Tutup">✕</button>
+      </div>
+      <ul id="hist-detail-list" class="cart-list summary-list"></ul>
+      <div class="summary-stats">
+        <div class="stat"><span>Jumlah Item</span><strong id="hist-detail-count">0</strong></div>
+        <div class="stat"><span>Total Belanja</span><strong id="hist-detail-total">Rp 0</strong></div>
+      </div>
     </div>
   </div>
 
