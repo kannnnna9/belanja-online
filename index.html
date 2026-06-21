@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f0b1a" />
+  <title>BelanjaCatat Online</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ HALAMAN SETUP API KEY ============ -->
+  <section id="screen-setup" class="screen">
+    <div class="setup-box">
+      <h1 class="brand">BelanjaCatat <span>Online</span></h1>
+      <p class="setup-lead">Scan label harga di rak pakai kamera, harga &amp; nama dibaca otomatis oleh AI.</p>
+
+      <div class="setup-card">
+        <label class="field-label" for="api-key-input">API Key Gemini</label>
+        <input id="api-key-input" type="password" class="inp" placeholder="Tempel API key di sini…" autocomplete="off" spellcheck="false" />
+        <button id="btn-save-key" class="btn btn-primary">Simpan &amp; Mulai</button>
+        <p id="setup-error" class="setup-error" hidden></p>
+      </div>
+
+      <details class="guide">
+        <summary>Belum punya API key? Gratis, ikuti ini ↓</summary>
+        <ol class="guide-list">
+          <li>Buka <strong>aistudio.google.com</strong> lalu login Google.</li>
+          <li>Klik <strong>“Get API Key”</strong> → <strong>“Create API key”</strong>.</li>
+          <li>Salin key, lalu <strong>batasi (restriction)</strong> ke domain GitHub Pages-mu sebagai <em>HTTP referrer</em> (mis. <code>https://namamu.github.io/*</code>) — wajib agar key aman &amp; tidak ditolak.</li>
+          <li>Tempel key di kolom atas. Key disimpan <strong>hanya di browser ini</strong>, tidak dikirim ke mana pun selain Google.</li>
+        </ol>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ HALAMAN KAMERA / SCAN ============ -->
+  <section id="screen-camera" class="screen" hidden>
+    <header class="topbar">
+      <h2 class="topbar-title">Scan Label</h2>
+      <div class="topbar-actions">
+        <button id="btn-open-cart" class="chip" type="button">
+          🛒 <span id="cart-count">0</span>
+        </button>
+        <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
+      </div>
+    </header>
+
+    <div class="cam-wrap">
+      <video id="video" playsinline autoplay muted></video>
+      <div class="cam-frame"><span>Arahkan ke label harga</span></div>
+      <canvas id="canvas" hidden></canvas>
+    </div>
+
+    <div id="cam-error" class="cam-error" hidden></div>
+
+    <div class="cam-controls">
+      <button id="btn-capture" class="shutter" type="button" aria-label="Ambil foto"></button>
+    </div>
+  </section>
+
+  <!-- ============ OVERLAY: MEMPROSES ============ -->
+  <div id="overlay-loading" class="overlay" hidden>
+    <div class="spinner"></div>
+    <p>Membaca label…</p>
+  </div>
+
+  <!-- ============ SHEET: HASIL SCAN (EDIT) ============ -->
+  <div id="sheet-result" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <h3 class="sheet-title">Hasil Scan</h3>
+      <label class="field-label" for="res-nama">Nama Barang</label>
+      <input id="res-nama" type="text" class="inp" placeholder="Nama barang" />
+      <label class="field-label" for="res-harga">Harga (Rp)</label>
+      <input id="res-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
+      <div class="sheet-actions">
+        <button id="btn-retry" class="btn btn-ghost" type="button">Ulangi</button>
+        <button id="btn-add" class="btn btn-primary" type="button">Tambah ke Keranjang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: KERANJANG ============ -->
+  <div id="sheet-cart" class="sheet-backdrop" hidden>
+    <div class="sheet sheet-tall">
+      <div class="sheet-head">
+        <h3 class="sheet-title">Keranjang</h3>
+        <button class="icon-btn" type="button" data-close="sheet-cart" aria-label="Tutup">✕</button>
+      </div>
+      <ul id="cart-list" class="cart-list"></ul>
+      <p id="cart-empty" class="empty">Keranjang masih kosong.</p>
+      <div class="cart-foot">
+        <div class="total-row">
+          <span>Total</span>
+          <strong id="cart-total">Rp 0</strong>
+        </div>
+        <button id="btn-finish" class="btn btn-primary" type="button">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: RINGKASAN ============ -->
+  <div id="sheet-summary" class="sheet-backdrop" hidden>
+    <div class="sheet sheet-tall">
+      <h3 class="sheet-title">Ringkasan Belanja</h3>
+      <ul id="summary-list" class="cart-list summary-list"></ul>
+      <div class="summary-stats">
+        <div class="stat"><span>Jumlah Item</span><strong id="sum-count">0</strong></div>
+        <div class="stat"><span>Total Belanja</span><strong id="sum-total">Rp 0</strong></div>
+      </div>
+      <div class="sheet-actions">
+        <button id="btn-close-summary" class="btn btn-ghost" type="button">Tutup</button>
+        <button id="btn-new" class="btn btn-primary" type="button">Belanja Baru</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: PENGATURAN ============ -->
+  <div id="sheet-settings" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <div class="sheet-head">
+        <h3 class="sheet-title">Pengaturan</h3>
+        <button class="icon-btn" type="button" data-close="sheet-settings" aria-label="Tutup">✕</button>
+      </div>
+      <p class="settings-note">API key tersimpan di browser ini saja.</p>
+      <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
+      <p class="version">BelanjaCatat Online · v1.0 · tanpa backend</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
