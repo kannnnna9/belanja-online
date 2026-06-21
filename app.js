@@ -16,6 +16,10 @@ const MODEL = 'gemini-flash-latest';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 
+// Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
+// diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
+const APP_VERSION = 'v0.2.2';
+
 const PROMPT = [
   'Baca teks pada label harga ini.',
   "Keluarkan dalam format JSON: {nama: '...', harga: ...}.",
@@ -43,6 +47,8 @@ function closeSheet(id) { $(id).hidden = true; }
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
+  const ver = $('app-version');
+  if (ver) ver.textContent = APP_VERSION;
   if (getKey()) {
     enterDashboard();
   } else {
