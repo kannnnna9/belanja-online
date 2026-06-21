@@ -181,7 +181,7 @@ async function scanLabel(base64) {
 }
 
 async function callGemini(base64) {
-  const url = `${API_BASE}/${MODEL}:generateContent?key=${encodeURIComponent(getKey())}`;
+  const url = `${API_BASE}/${MODEL}:generateContent`;
   const body = {
     contents: [
       {
@@ -203,7 +203,12 @@ async function callGemini(base64) {
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // Key dikirim via header (wajib untuk key format baru "AQ.",
+      // dan tetap kompatibel dengan key lama "AIza").
+      'x-goog-api-key': getKey(),
+    },
     body: JSON.stringify(body),
   });
 
