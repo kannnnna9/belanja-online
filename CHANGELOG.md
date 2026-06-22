@@ -5,6 +5,32 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.5.0] - 2026-06-22
+
+### Changed
+
+- Pin model scan ke `gemini-3.1-flash-lite` (sebelumnya alias
+  `gemini-flash-latest`). Pengecekan kuota free-tier di AI Studio menunjukkan
+  `gemini-flash-latest` kini menunjuk Gemini 3.5 Flash dengan batas hanya
+  **20 request per hari (RPD)** — tak cukup untuk satu sesi belanja (struk bisa
+  50 item = 50 scan). Gemini 3.1 Flash Lite jauh lebih longgar: **15 RPM,
+  500 RPD**, dan akurasi baca label tetap 100%. Id stabil dipilih (bukan alias
+  `-latest`) agar tak hot-swap ke rilis ber-limit lebih ketat. ([57cf85f])
+- Foto label di-crop ke kotak scan 5:3 sebelum dikirim; area di luar kotak
+  tidak ikut dikirim. Resolusi diturunkan ke maksimal 800px lebar dengan
+  kualitas JPEG 0,75 (dari 1280px / 0,85) untuk memangkas ukuran payload dan
+  token gambar Gemini. ([57cf85f])
+
+### Added
+
+- Indikator kuota di dashboard: "⚡ Siap" saat idle, "⏳ N/15 RPM" mengikuti
+  jumlah request dalam 60 detik terakhir, "❌ Limit" saat kena 429. Pemakaian
+  harian (RPD) ditampilkan di halaman Pengaturan (N/500), reset otomatis tiap
+  ganti hari. ([57cf85f])
+- Tombol "🖼 Uji Galeri" di dashboard: pilih gambar dari penyimpanan lalu
+  kirim ke pipeline scan yang sama (crop 5:3 + turun resolusi); hasilnya bisa
+  diedit dan masuk keranjang seperti hasil kamera. ([57cf85f])
+
 ## [0.4.0] - 2026-06-22
 
 ### Changed
@@ -87,6 +113,7 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
+[0.5.0]: https://github.com/kannnnna9/belanja-online/compare/57cf85f...main
 [0.4.0]: https://github.com/kannnnna9/belanja-online/compare/bca2427...main
 [0.3.0]: https://github.com/kannnnna9/belanja-online/compare/ede8107...674a20a
 [0.2.2]: https://github.com/kannnnna9/belanja-online/compare/cba4120...ede8107
@@ -105,4 +132,5 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 [ede8107]: https://github.com/kannnnna9/belanja-online/commit/ede8107
 [674a20a]: https://github.com/kannnnna9/belanja-online/commit/674a20a
 [f33760d]: https://github.com/kannnnna9/belanja-online/commit/f33760d
+[57cf85f]: https://github.com/kannnnna9/belanja-online/commit/57cf85f
 [main]: https://github.com/kannnnna9/belanja-online/commits/main

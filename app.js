@@ -7,22 +7,25 @@
 'use strict';
 
 /* ---------- Konfigurasi ----------
-   MODEL pakai alias 'gemini-flash-latest' (Flash penuh) supaya selalu menunjuk
-   ke Flash terbaru yang masih punya free tier, tanpa ikut mati saat Google
-   men-deprecate versi tertentu (mis. gemini-2.0-flash dimatikan 1 Juni 2026 →
-   free tier-nya jadi limit:0).
-   Sempat dicoba 'gemini-flash-lite-latest' (Flash-Lite) demi kecepatan:
-   akurasi sama persis tapi latensi tak konsisten (≈50% scan kena cold-start
-   free-tier, terburuk ~16s). Flash penuh konsisten 2–3,4s tanpa lonjakan,
-   jadi dipilih demi prediktabilitas. */
-const MODEL = 'gemini-flash-latest';
+   MODEL di-PIN ke id stabil 'gemini-3.1-flash-lite' (bukan alias '-latest').
+   Alasan: pengecekan kuota free-tier di AI Studio (akun Reza) menunjukkan
+   hampir semua Flash dibatasi hanya 20 request per HARI (RPD) — tak cukup
+   untuk satu sesi belanja (struk bisa 50 item = 50 scan). Gemini 3.1 Flash
+   Lite satu-satunya yang longgar: RPM 15, RPD 500. Akurasi baca label juga
+   sudah terbukti 100%. Alias '-latest' sengaja dihindari karena bisa hot-swap
+   ke rilis ber-limit lebih ketat (mis. 'gemini-flash-latest' kini menunjuk
+   Gemini 3.5 Flash yang dibatasi 20 RPD) tanpa diduga. */
+const MODEL = 'gemini-3.1-flash-lite';
+// Batas kuota free-tier model di atas (sumber: AI Studio Rate Limit, 2026-06).
+const RPM_LIMIT = 15;   // request per menit
+const RPD_LIMIT = 500;  // request per hari
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v0.4.0';
+const APP_VERSION = 'v0.5.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -49,12 +52,75 @@ function openSheet(id) { $(id).hidden = false; }
 function closeSheet(id) { $(id).hidden = true; }
 
 /* ============================================================
+   INDIKATOR KUOTA (rate-limit)
+   Lacak request ke Gemini agar user tahu sisa jatah sebelum kena 429.
+   RPM: timestamp tiap request, yang lebih lama dari 60 detik dibuang
+   (in-memory, hilang saat reload — tak apa, jendelanya cuma semenit).
+   RPD: dihitung & disimpan di localStorage, reset otomatis tiap ganti hari.
+   ============================================================ */
+const RPD_STORAGE = 'bco_rpd';
+let reqTimes = [];     // timestamp (ms) request dalam jendela 60 detik
+let limitHit = false;  // true bila request terakhir kena 429
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function loadRpd() {
+  try {
+    const o = JSON.parse(localStorage.getItem(RPD_STORAGE));
+    if (o && o.date === todayKey()) return o.count;
+  } catch (_) {}
+  return 0; // tak ada catatan / beda hari → mulai dari 0 (reset harian)
+}
+function bumpRpd() {
+  localStorage.setItem(RPD_STORAGE, JSON.stringify({ date: todayKey(), count: loadRpd() + 1 }));
+}
+
+// Dipanggil tiap satu request dikirim ke Gemini (termasuk tiap retry).
+function recordRequest() {
+  reqTimes.push(Date.now());
+  bumpRpd();
+  limitHit = false; // request baru terkirim → bersihkan penanda limit lama
+  renderQuota();
+}
+function markLimit() { limitHit = true; renderQuota(); }
+
+function pruneReqTimes() {
+  const cut = Date.now() - 60000;
+  reqTimes = reqTimes.filter((t) => t > cut);
+}
+
+function renderQuota() {
+  pruneReqTimes();
+  const el = $('quota-indicator');
+  if (el) {
+    if (limitHit) {
+      el.textContent = '❌ Limit';
+      el.className = 'quota quota-limit';
+    } else if (reqTimes.length === 0) {
+      el.textContent = '⚡ Siap';
+      el.className = 'quota quota-ok';
+    } else {
+      el.textContent = `⏳ ${reqTimes.length}/${RPM_LIMIT} RPM`;
+      el.className = 'quota quota-busy';
+    }
+  }
+  const rpd = $('rpd-counter');
+  if (rpd) rpd.textContent = `${loadRpd()}/${RPD_LIMIT}`;
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
   const ver = $('app-version');
   if (ver) ver.textContent = APP_VERSION;
+  // Refresh indikator kuota berkala supaya hitungan RPM turun sendiri
+  // saat timestamp lewat 60 detik (tanpa nunggu aksi user).
+  renderQuota();
+  setInterval(renderQuota, 5000);
   if (getKey()) {
     enterDashboard();
   } else {
@@ -73,8 +139,12 @@ function wireEvents() {
   $('btn-add-item').addEventListener('click', openCamera);
   $('btn-manual').addEventListener('click', inputManual);
   $('btn-finish').addEventListener('click', finishShopping);
-  $('btn-settings').addEventListener('click', () => openSheet('sheet-settings'));
+  $('btn-settings').addEventListener('click', () => { renderQuota(); openSheet('sheet-settings'); });
   $('btn-history').addEventListener('click', openHistory);
+
+  // Uji galeri: pilih gambar dari penyimpanan → pipeline scan yang sama
+  $('btn-gallery').addEventListener('click', () => $('gallery-input').click());
+  $('gallery-input').addEventListener('change', onGalleryPick);
 
   // Riwayat
   $('btn-history-back').addEventListener('click', enterDashboard);
@@ -147,6 +217,7 @@ function enterDashboard() {
   stopCamera();
   showScreen('screen-dashboard');
   renderCart();
+  renderQuota();
 }
 
 function openCamera() {
@@ -193,6 +264,57 @@ function freezeCamera() {
   }
 }
 
+// Batas crop & kompresi. Kirim HANYA isi kotak scan 5:3 (bukan seluruh
+// frame), perkecil ke maksimal 800px lebar, kualitas JPEG 0,75 → payload
+// jauh lebih ringan & token gambar Gemini berkurang → scan lebih cepat.
+const MAX_CROP_W = 800;
+const JPEG_QUALITY = 0.75;
+const FRAME_AR = 5 / 3; // rasio kotak scan
+
+// Hitung persegi sumber rasio `ar` yang berada di tengah area w×h.
+function centerCrop(w, h, ar) {
+  let sw = w, sh = w / ar;
+  if (sh > h) { sh = h; sw = h * ar; }
+  return { sx: (w - sw) / 2, sy: (h - sh) / 2, sw, sh };
+}
+
+// Petakan posisi kotak .cam-frame (koordinat layar) ke piksel sumber video,
+// memperhitungkan object-fit: cover. Bila gagal → fallback crop tengah 5:3.
+function computeFrameCrop(video) {
+  const VW = video.videoWidth, VH = video.videoHeight;
+  try {
+    const wrap = video.parentElement;            // .cam-wrap
+    const frameEl = wrap.querySelector('.cam-frame');
+    const wr = wrap.getBoundingClientRect();
+    const fr = frameEl.getBoundingClientRect();
+    const scale = Math.max(wr.width / VW, wr.height / VH); // object-fit: cover
+    const offX = (wr.width - VW * scale) / 2;     // video meluber & ter-center
+    const offY = (wr.height - VH * scale) / 2;
+    let sx = (fr.left - wr.left - offX) / scale;
+    let sy = (fr.top - wr.top - offY) / scale;
+    let sw = fr.width / scale;
+    let sh = fr.height / scale;
+    // Jaga tetap di dalam batas sumber.
+    sx = Math.max(0, Math.min(sx, VW));
+    sy = Math.max(0, Math.min(sy, VH));
+    sw = Math.min(sw, VW - sx);
+    sh = Math.min(sh, VH - sy);
+    if (sw > 10 && sh > 10) return { sx, sy, sw, sh };
+  } catch (_) {}
+  return centerCrop(VW, VH, FRAME_AR);
+}
+
+// Gambar potongan `c` dari `source` ke canvas (≤800px lebar) → base64 JPEG.
+function cropToBase64(source, c) {
+  const canvas = $('canvas');
+  const outW = Math.min(Math.round(c.sw), MAX_CROP_W);
+  const outH = Math.round(outW * (c.sh / c.sw));
+  canvas.width = outW;
+  canvas.height = outH;
+  canvas.getContext('2d').drawImage(source, c.sx, c.sy, c.sw, c.sh, 0, 0, outW, outH);
+  return canvas.toDataURL('image/jpeg', JPEG_QUALITY).split(',')[1];
+}
+
 function capture() {
   const video = $('video');
   if (!video.videoWidth) {
@@ -200,16 +322,30 @@ function capture() {
     $('cam-error').hidden = false;
     return;
   }
-  const canvas = $('canvas');
-  // Batasi sisi terpanjang ~1280px agar payload ringan
-  const maxSide = 1280;
-  const scale = Math.min(1, maxSide / Math.max(video.videoWidth, video.videoHeight));
-  canvas.width = Math.round(video.videoWidth * scale);
-  canvas.height = Math.round(video.videoHeight * scale);
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  lastShot = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  lastShot = cropToBase64(video, computeFrameCrop(video));
   freezeCamera(); // matikan kamera setelah jepret; nyalakan lagi hanya bila jepret ulang
   scanLabel(lastShot);
+}
+
+// Uji galeri: muat gambar pilihan user, crop tengah 5:3 (tak ada kotak
+// kamera di sini), perkecil, lalu lewatkan ke pipeline scan yang sama.
+function onGalleryPick(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // izinkan pilih file sama lagi nanti
+  if (!file) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    lastShot = cropToBase64(img, centerCrop(img.width, img.height, FRAME_AR));
+    URL.revokeObjectURL(url);
+    scanLabel(lastShot);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    showResult('', '', 'Gagal Muat');
+    showResultError('Gambar tidak bisa dimuat.');
+  };
+  img.src = url;
 }
 
 /* ============================================================
@@ -275,6 +411,7 @@ async function callGemini(base64, timeoutMs) {
   // Batalkan request bila melewati timeoutMs (lawan cold-start free-tier).
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  recordRequest(); // catat ke indikator kuota (RPM/RPD)
   let res;
   try {
     res = await fetch(url, {
@@ -307,6 +444,7 @@ async function callGemini(base64, timeoutMs) {
     // 4xx selain 429 = permanen (key/referrer/format) → jangan retry.
     // 429 (kuota) & 5xx (server) = sementara → boleh retry.
     err.permanent = res.status >= 400 && res.status < 500 && res.status !== 429;
+    if (res.status === 429) markLimit(); // tampilkan "❌ Limit" di indikator
     throw err;
   }
 

@@ -52,11 +52,14 @@
         <span>Total</span>
         <strong id="cart-total">Rp 0</strong>
       </div>
+      <div id="quota-indicator" class="quota quota-ok">⚡ Siap</div>
       <button id="btn-add-item" class="btn btn-primary">📷 Tambah Item</button>
       <div class="dash-foot-row">
+        <button id="btn-gallery" class="btn btn-ghost" type="button">🖼 Uji Galeri</button>
         <button id="btn-manual" class="btn btn-ghost" type="button">Input Manual</button>
-        <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
       </div>
+      <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
+      <input id="gallery-input" type="file" accept="image/*" hidden />
     </div>
   </section>
 
@@ -139,8 +142,12 @@
         <button class="icon-btn" type="button" data-close="sheet-settings" aria-label="Tutup">✕</button>
       </div>
       <p class="settings-note">API key tersimpan di browser ini saja.</p>
+      <div class="rpd-row">
+        <span>Pemakaian hari ini</span>
+        <strong id="rpd-counter">0/500</strong>
+      </div>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <p class="version">BelanjaCatat Online · <span id="app-version">v0.2.2</span> · tanpa backend</p>
+      <p class="version">BelanjaCatat Online · <span id="app-version">v0.5.0</span> · tanpa backend</p>
     </div>
   </div>
 
