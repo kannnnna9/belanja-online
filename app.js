@@ -7,22 +7,22 @@
 'use strict';
 
 /* ---------- Konfigurasi ----------
-   MODEL pakai alias 'gemini-flash-lite-latest' (varian Flash-Lite, latensi
-   rendah, cocok untuk tugas ringan baca 1 label) supaya selalu menunjuk ke
-   Flash-Lite terbaru tanpa ikut mati saat Google men-deprecate versi tertentu
-   (alias di-hot-swap dengan notice 2 minggu; mis. gemini-2.0-flash dimatikan
-   1 Juni 2026 → free tier-nya jadi limit:0).
-   Diuji menggantikan 'gemini-flash-latest' (Flash penuh) karena bottleneck
-   scan terbukti di inferensi model, bukan jaringan (payload cuma ~55KB tapi
-   2–3,4s di WiFi stabil). Mau akurasi maksimal lagi? balik ke 'gemini-flash-latest'. */
-const MODEL = 'gemini-flash-lite-latest';
+   MODEL pakai alias 'gemini-flash-latest' (Flash penuh) supaya selalu menunjuk
+   ke Flash terbaru yang masih punya free tier, tanpa ikut mati saat Google
+   men-deprecate versi tertentu (mis. gemini-2.0-flash dimatikan 1 Juni 2026 →
+   free tier-nya jadi limit:0).
+   Sempat dicoba 'gemini-flash-lite-latest' (Flash-Lite) demi kecepatan:
+   akurasi sama persis tapi latensi tak konsisten (≈50% scan kena cold-start
+   free-tier, terburuk ~16s). Flash penuh konsisten 2–3,4s tanpa lonjakan,
+   jadi dipilih demi prediktabilitas. */
+const MODEL = 'gemini-flash-latest';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v0.3.0';
+const APP_VERSION = 'v0.4.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -222,19 +222,12 @@ const SCAN_TIMEOUTS = [6000, 12000];
 
 async function scanLabel(base64) {
   openSheet('overlay-loading');
-  // [DIAGNOSTIK SEMENTARA] ukur waktu request + ukuran payload + jumlah
-  // percobaan (x1/x2), tampilkan di sheet hasil. Hapus setelah selesai mengukur.
-  const kb = Math.round((base64.length * 3 / 4) / 1024);
-  const t0 = performance.now();
-  let attempts = 0;
   try {
     for (let i = 0; i < SCAN_TIMEOUTS.length; i++) {
-      attempts++;
       try {
         const result = await callGemini(base64, SCAN_TIMEOUTS[i]);
-        const s = ((performance.now() - t0) / 1000).toFixed(1);
         closeSheet('overlay-loading');
-        showResult(result.nama, result.harga, `Hasil Scan · ${s}s · ${kb}KB · x${attempts}`);
+        showResult(result.nama, result.harga);
         return;
       } catch (e) {
         // Error permanen (key/kuota/format) atau percobaan terakhir → menyerah.
@@ -243,13 +236,12 @@ async function scanLabel(base64) {
       }
     }
   } catch (e) {
-    const s = ((performance.now() - t0) / 1000).toFixed(1);
     closeSheet('overlay-loading');
     // Tetap buka sheet hasil supaya user bisa isi manual,
     // dan tampilkan pesan error ASLI di dalam sheet (bukan di #cam-error
     // yang ketutup sheet) supaya penyebab gagal kelihatan.
     showResult('', '', 'Scan Gagal');
-    showResultError(`Gagal (${s}s, ${kb}KB, x${attempts}): ` + e.message);
+    showResultError(e.message);
   }
 }
 

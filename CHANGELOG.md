@@ -5,6 +5,28 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [0.4.0] - 2026-06-22
+
+### Changed
+
+- Kembalikan model scan ke `gemini-flash-latest` (Flash penuh). Eksperimen
+  `gemini-flash-lite-latest` menunjukkan akurasi sama persis (100% pada label
+  uji) tetapi latensi tidak konsisten: sekitar separuh scan kena cold-start
+  free-tier, kasus terburuk 16,7 detik. Flash penuh konsisten 2–3,4 detik
+  tanpa lonjakan, jadi dipilih demi prediktabilitas. ([main])
+
+### Added
+
+- Timeout per percobaan + auto-retry saat scan: percobaan pertama dipotong di
+  6 detik untuk memangkas lonjakan cold-start, retry kedua diberi tenggang 12
+  detik. Sebagai jaring pengaman; pada Flash penuh yang ~3 detik nyaris tak
+  pernah terpicu. ([f33760d])
+
+### Removed
+
+- Buang teks diagnostik sementara (`· 2.3s · 55KB · x1`) dari judul sheet
+  hasil; kembali ke "Hasil Scan" bersih. ([main])
+
 ## [0.3.0] - 2026-06-21
 
 ### Added
@@ -65,6 +87,7 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
+[0.4.0]: https://github.com/kannnnna9/belanja-online/compare/bca2427...main
 [0.3.0]: https://github.com/kannnnna9/belanja-online/compare/ede8107...674a20a
 [0.2.2]: https://github.com/kannnnna9/belanja-online/compare/cba4120...ede8107
 [0.2.1]: https://github.com/kannnnna9/belanja-online/compare/c05cd6d...cba4120
@@ -81,3 +104,5 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 [9160343]: https://github.com/kannnnna9/belanja-online/commit/9160343
 [ede8107]: https://github.com/kannnnna9/belanja-online/commit/ede8107
 [674a20a]: https://github.com/kannnnna9/belanja-online/commit/674a20a
+[f33760d]: https://github.com/kannnnna9/belanja-online/commit/f33760d
+[main]: https://github.com/kannnnna9/belanja-online/commits/main
