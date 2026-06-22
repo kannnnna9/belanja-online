@@ -22,7 +22,7 @@ const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v0.5.0-hybrid-experiment';
+const APP_VERSION = 'v0.4.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -30,31 +30,12 @@ const PROMPT = [
   'Harga dalam Rupiah, tanpa titik/koma. Contoh: 16500 bukan 16.500.',
 ].join(' ');
 
-/* ---------- Hybrid OCR (EKSPERIMEN) ----------
-   Mode hybrid: Tesseract.js (lokal, WASM) membaca teks mentah dari foto, lalu
-   teks itu dikirim ke Gemini (gemini-flash-latest) untuk dirapikan jadi
-   {nama, harga}. Tujuannya memangkas latensi (tak perlu unggah gambar +
-   inferensi visi) sambil tetap akurat.
-   Flag di bawah mematikan SELURUH jalur ini bila bermasalah → app balik ke
-   alur murni Gemini-gambar (v0.4.0). Bila Tesseract gagal init atau bacaannya
-   kosong, app otomatis fallback ke gambar tanpa user perlu menunggu/bertindak. */
-const USE_HYBRID_OCR = true;
-
-// Prompt koreksi: teks mentah Tesseract ditempel di akhir, lalu jadi {nama, harga}.
-const OCR_PROMPT_PREFIX =
-  'Teks berikut adalah hasil OCR dari label harga. Susun menjadi JSON dengan ' +
-  'format: {"nama": "...", "harga": ...}. Harga dalam Rupiah tanpa titik/koma. ' +
-  'Contoh: 16500 bukan 16.500. Teks mentah: ';
-
 /* ---------- State ---------- */
 let cart = [];          // [{ nama, harga }]
 let stream = null;      // MediaStream kamera aktif
 let lastShot = null;    // base64 JPEG hasil jepret terakhir (untuk "Ulangi")
 let editIndex = -1;     // indeks item keranjang yang sedang diedit (-1 = tidak ada)
 let sessionSaved = false; // true bila komposisi keranjang ini sudah masuk riwayat
-let ocrWorker = null;      // worker Tesseract.js (null bila hybrid mati/gagal)
-let ocrReady = false;      // true bila worker lokal siap dipakai
-let ocrInitStarted = false; // jaga initOcr() hanya berjalan sekali
 
 /* ---------- Util DOM ---------- */
 const $ = (id) => document.getElementById(id);
@@ -76,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ver) ver.textContent = APP_VERSION;
   if (getKey()) {
     enterDashboard();
-    initOcr(); // siapkan OCR lokal di latar (idempotent)
   } else {
     showScreen('screen-setup');
   }
@@ -151,7 +131,6 @@ function saveKey() {
   localStorage.setItem(KEY_STORAGE, val);
   err.hidden = true;
   enterDashboard();
-  initOcr(); // mulai unduh & init Tesseract di latar setelah key tersimpan
 }
 
 function changeKey() {
@@ -234,59 +213,6 @@ function capture() {
 }
 
 /* ============================================================
-   HYBRID OCR (Tesseract.js lokal)
-   Diinisialisasi di latar. Gagal di tahap mana pun → diam-diam matikan
-   hybrid (ocrReady=false); app tetap jalan dgn Gemini-gambar saja.
-   ============================================================ */
-const TESSERACT_LANGS = 'ind+eng'; // label belanja: campuran Indonesia + Inggris
-
-async function initOcr() {
-  if (!USE_HYBRID_OCR || ocrInitStarted) return;
-  ocrInitStarted = true;
-
-  const status = $('ocr-status');
-  if (status) status.hidden = false; // indikator kecil di dashboard selama init
-  try {
-    await ensureTesseractLoaded();              // tunggu library CDN (WASM ~2MB) siap
-    ocrWorker = await Tesseract.createWorker(TESSERACT_LANGS);
-    ocrReady = true;
-  } catch (_) {
-    // JANGAN tampilkan error ke user. Nonaktifkan hybrid, andalkan Gemini penuh.
-    ocrWorker = null;
-    ocrReady = false;
-  } finally {
-    if (status) status.hidden = true;
-  }
-}
-
-// Script CDN dimuat async (tak memblokir app); tunggu sampai global Tesseract ada.
-function ensureTesseractLoaded(timeoutMs = 20000) {
-  return new Promise((resolve, reject) => {
-    if (typeof Tesseract !== 'undefined') return resolve();
-    const started = performance.now();
-    const iv = setInterval(() => {
-      if (typeof Tesseract !== 'undefined') {
-        clearInterval(iv);
-        resolve();
-      } else if (performance.now() - started > timeoutMs) {
-        clearInterval(iv);
-        reject(new Error('Tesseract gagal dimuat'));
-      }
-    }, 150);
-  });
-}
-
-// Baca teks mentah dari foto. Kembalikan '' bila gagal/kosong → fallback ke gambar.
-async function runTesseract(base64) {
-  try {
-    const { data } = await ocrWorker.recognize('data:image/jpeg;base64,' + base64);
-    return (data && data.text ? data.text : '').trim();
-  } catch (_) {
-    return '';
-  }
-}
-
-/* ============================================================
    PANGGIL GEMINI
    ============================================================ */
 // Timeout per percobaan (ms). Lonjakan cold-start free-tier (8–16s) dipotong
@@ -296,42 +222,19 @@ const SCAN_TIMEOUTS = [6000, 12000];
 
 async function scanLabel(base64) {
   openSheet('overlay-loading');
-  // [DIAGNOSTIK SEMENTARA] hitung waktu sejak rana ditekan (capture langsung
-  // memanggil scanLabel). Rincian per-tahap di console.log; total di judul sheet.
-  const t0 = performance.now();
-  let usedImage = false; // true bila scan jatuh ke jalur gambar (fallback / non-hybrid)
   try {
-    let result = null;
-
-    // Jalur HYBRID: OCR lokal (Tesseract) → Gemini merapikan teksnya.
-    if (USE_HYBRID_OCR && ocrReady) {
-      const tOcr = performance.now();
-      const raw = await runTesseract(base64);
-      const ocrMs = performance.now() - tOcr; // [DIAGNOSTIK] durasi Tesseract
-      // Bacaan kosong/null → biarkan result null supaya jatuh ke fallback gambar.
-      if (raw) {
-        const tGem = performance.now();
-        result = await geminiWithRetry((t) => callGeminiText(raw, t));
-        const gemMs = performance.now() - tGem; // [DIAGNOSTIK] durasi Gemini (teks)
-        console.log(`[hybrid] tesseract ${(ocrMs / 1000).toFixed(1)}s + gemini-teks ${(gemMs / 1000).toFixed(1)}s`);
-      } else {
-        console.log(`[hybrid] tesseract ${(ocrMs / 1000).toFixed(1)}s → kosong, fallback gambar`);
+    for (let i = 0; i < SCAN_TIMEOUTS.length; i++) {
+      try {
+        const result = await callGemini(base64, SCAN_TIMEOUTS[i]);
+        closeSheet('overlay-loading');
+        showResult(result.nama, result.harga);
+        return;
+      } catch (e) {
+        // Error permanen (key/kuota/format) atau percobaan terakhir → menyerah.
+        // Selain itu (timeout/jaringan/5xx) → coba sekali lagi.
+        if (e.permanent || i === SCAN_TIMEOUTS.length - 1) throw e;
       }
     }
-
-    // Fallback / mode non-hybrid: Gemini langsung pada gambar asli (alur v0.4.0).
-    if (!result) {
-      usedImage = true;
-      const tGem = performance.now();
-      result = await geminiWithRetry((t) => callGemini(base64, t));
-      const gemMs = performance.now() - tGem; // [DIAGNOSTIK] durasi Gemini (gambar)
-      console.log(`[fallback] gemini-gambar ${(gemMs / 1000).toFixed(1)}s`);
-    }
-
-    closeSheet('overlay-loading');
-    // [DIAGNOSTIK SEMENTARA] total di judul; tandai "(img)" bila lewat jalur gambar.
-    const total = ((performance.now() - t0) / 1000).toFixed(1);
-    showResult(result.nama, result.harga, `Hasil Scan · ${total}s` + (usedImage ? ' (img)' : ''));
   } catch (e) {
     closeSheet('overlay-loading');
     // Tetap buka sheet hasil supaya user bisa isi manual,
@@ -342,49 +245,23 @@ async function scanLabel(base64) {
   }
 }
 
-// Timeout + auto-retry generik untuk satu pemanggilan Gemini (dipakai jalur
-// gambar maupun teks). callFn(timeoutMs) harus melempar error ber-flag
-// .permanent untuk error final. Mekanisme ini TIDAK diubah dari v0.4.0.
-async function geminiWithRetry(callFn) {
-  for (let i = 0; i < SCAN_TIMEOUTS.length; i++) {
-    try {
-      return await callFn(SCAN_TIMEOUTS[i]);
-    } catch (e) {
-      // Error permanen (key/kuota/format) atau percobaan terakhir → menyerah.
-      // Selain itu (timeout/jaringan/5xx) → coba sekali lagi.
-      if (e.permanent || i === SCAN_TIMEOUTS.length - 1) throw e;
-    }
-  }
-}
-
 function showResultError(msg) {
   const el = $('res-error');
   el.textContent = msg + ' — isi manual atau ulangi.';
   el.hidden = false;
 }
 
-// Jalur gambar: Gemini membaca langsung dari foto label (alur v0.4.0).
-function callGemini(base64, timeoutMs) {
-  return geminiGenerate(
-    [
-      { text: PROMPT },
-      { inline_data: { mime_type: 'image/jpeg', data: base64 } },
-    ],
-    timeoutMs,
-  );
-}
-
-// Jalur hybrid: Gemini merapikan teks mentah hasil Tesseract jadi {nama, harga}.
-function callGeminiText(rawText, timeoutMs) {
-  return geminiGenerate([{ text: OCR_PROMPT_PREFIX + rawText }], timeoutMs);
-}
-
-// Inti pemanggilan Gemini: kirim `parts` (teks dan/atau gambar) dengan skema
-// JSON {nama, harga}, lalu kembalikan hasil yang sudah di-parse.
-async function geminiGenerate(parts, timeoutMs) {
+async function callGemini(base64, timeoutMs) {
   const url = `${API_BASE}/${MODEL}:generateContent`;
   const body = {
-    contents: [{ parts }],
+    contents: [
+      {
+        parts: [
+          { text: PROMPT },
+          { inline_data: { mime_type: 'image/jpeg', data: base64 } },
+        ],
+      },
+    ],
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: {

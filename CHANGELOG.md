@@ -5,32 +5,6 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
-## [0.5.0-hybrid-experiment] - 2026-06-22
-
-Rilis eksperimental. Seluruh fitur di bawah dibungkus flag `USE_HYBRID_OCR`
-di `app.js` — set `false` untuk kembali sepenuhnya ke alur v0.4.0.
-
-### Added
-
-- Mode **Hybrid OCR**: Tesseract.js (lokal, WASM) membaca teks mentah dari
-  foto label, lalu teks itu dikirim ke `gemini-flash-latest` untuk dirapikan
-  menjadi `{nama, harga}`. Tujuannya memangkas latensi (tak perlu unggah
-  gambar + inferensi visi) sambil tetap akurat. ([main])
-- Tesseract.js diinisialisasi di latar setelah API key tersimpan (unduh WASM
-  ~2MB); indikator kecil "Menyiapkan OCR cepat…" tampil di topbar dashboard
-  selama proses. ([main])
-- Fallback otomatis: bila Tesseract gagal diinisialisasi atau hasil bacaannya
-  kosong, scan langsung memakai Gemini pada gambar asli (alur v0.4.0) tanpa
-  user perlu menunggu atau melakukan apa pun. Kegagalan init tidak memunculkan
-  error — mode hybrid sekadar dinonaktifkan diam-diam. ([main])
-
-### Changed
-
-- Pemanggilan Gemini dipecah jadi inti `geminiGenerate(parts)` dengan dua
-  pembungkus: jalur gambar (`callGemini`) dan jalur teks (`callGeminiText`).
-  Mekanisme timeout 6s + auto-retry tidak berubah, kini dipakai kedua jalur
-  lewat helper `geminiWithRetry`. ([main])
-
 ## [0.4.0] - 2026-06-22
 
 ### Changed
@@ -113,7 +87,6 @@ di `app.js` — set `false` untuk kembali sepenuhnya ke alur v0.4.0.
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[0.5.0-hybrid-experiment]: https://github.com/kannnnna9/belanja-online/compare/00ec0de...main
 [0.4.0]: https://github.com/kannnnna9/belanja-online/compare/bca2427...main
 [0.3.0]: https://github.com/kannnnna9/belanja-online/compare/ede8107...674a20a
 [0.2.2]: https://github.com/kannnnna9/belanja-online/compare/cba4120...ede8107
