@@ -201,7 +201,25 @@ body {
   padding: 16px 18px;
 }
 .topbar-title { font-size: 19px; font-weight: 700; }
-.topbar-actions { display: flex; gap: 10px; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+/* Indikator kecil "menyiapkan OCR" di dashboard (eksperimen hybrid) */
+.ocr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.ocr-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 
 .cam-wrap {
   position: relative;
