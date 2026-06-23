@@ -29,7 +29,7 @@ const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.2.1';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -88,6 +88,7 @@ function closeSheet(id) { $(id).hidden = true; }
    RPD: dihitung & disimpan di localStorage, reset otomatis tiap ganti hari.
    ============================================================ */
 const RPD_STORAGE = 'bco_rpd';
+const RPM_STORAGE = 'bco_rpm';
 let reqTimes = [];     // timestamp (ms) request dalam jendela 60 detik
 let limitHit = false;  // true bila request terakhir kena 429
 
@@ -106,9 +107,24 @@ function bumpRpd() {
   localStorage.setItem(RPD_STORAGE, JSON.stringify({ date: todayKey(), count: loadRpd() + 1 }));
 }
 
+// RPM ikut di-persist (bukan in-memory saja) supaya refresh/tutup-tab di
+// tengah belanja tak menyetel ulang hitungan ke "⚡ Siap" yang menyesatkan —
+// timestamp lewat 60 detik tetap dibuang saat dimuat, jadi jendelanya akurat.
+function saveReqTimes() {
+  try { localStorage.setItem(RPM_STORAGE, JSON.stringify(reqTimes)); } catch (_) {}
+}
+function loadReqTimes() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(RPM_STORAGE));
+    if (Array.isArray(arr)) reqTimes = arr;
+  } catch (_) {}
+  pruneReqTimes(); // buang yang sudah lewat 60 detik sejak terakhir dibuka
+}
+
 // Dipanggil tiap satu request dikirim ke Gemini (termasuk tiap retry).
 function recordRequest() {
   reqTimes.push(Date.now());
+  saveReqTimes();
   bumpRpd();
   limitHit = false; // request baru terkirim → bersihkan penanda limit lama
   renderQuota();
@@ -117,7 +133,9 @@ function markLimit() { limitHit = true; renderQuota(); }
 
 function pruneReqTimes() {
   const cut = Date.now() - 60000;
+  const before = reqTimes.length;
   reqTimes = reqTimes.filter((t) => t > cut);
+  if (reqTimes.length !== before) saveReqTimes(); // simpanan ikut rapi saat menyusut
 }
 
 function renderQuota() {
@@ -146,8 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
   const ver = $('app-version');
   if (ver) ver.textContent = APP_VERSION;
-  // Refresh indikator kuota berkala supaya hitungan RPM turun sendiri
-  // saat timestamp lewat 60 detik (tanpa nunggu aksi user).
+  // Pulihkan hitungan RPM dari sesi sebelumnya (timestamp >60s dibuang),
+  // lalu refresh berkala supaya angkanya turun sendiri tanpa nunggu aksi user.
+  loadReqTimes();
   renderQuota();
   setInterval(renderQuota, 5000);
   if (getKey()) {

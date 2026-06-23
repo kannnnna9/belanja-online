@@ -5,6 +5,17 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.2.1] - 2026-06-23
+
+### Fixed
+
+- **Indikator kuota RPM kini bertahan menembus refresh.** Sebelumnya hitungan
+  RPM hanya di memori sehingga reload menyetelnya ulang ke "⚡ Siap" — masalah
+  ini jadi kentara setelah keranjang anti-hilang (v1.2.0) membuat refresh di
+  tengah belanja jadi hal biasa. Timestamp request sekarang ikut disimpan di
+  `localStorage` (`bco_rpm`) dan dipulihkan saat app dibuka, dengan timestamp
+  yang sudah lewat 60 detik tetap dibuang agar jendela RPM tetap akurat.
+
 ## [1.2.0] - 2026-06-23
 
 ### Added
@@ -183,7 +194,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/9d5d039...main
+[1.2.1]: https://github.com/kannnnna9/keranjang-pintar/compare/e211d12...main
+[1.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/9d5d039...e211d12
 [1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...9d5d039
 [1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...0a8bb61
 [1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...4d24410
