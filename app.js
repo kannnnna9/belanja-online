@@ -29,7 +29,7 @@ const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.2.1';
+const APP_VERSION = 'v1.2.2';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -239,13 +239,16 @@ function wireEvents() {
     b.addEventListener('click', () => closeSheet(b.dataset.close));
   });
 
-  // Klik backdrop untuk menutup sheet
+  // Klik backdrop untuk menutup sheet.
   document.querySelectorAll('.sheet-backdrop').forEach((bd) => {
     bd.addEventListener('click', (e) => {
       if (e.target !== bd) return;
+      // Hasil scan SENGAJA dikecualikan: jangan tutup lewat ketuk backdrop,
+      // supaya item yang sudah discan tak hilang gara-gara salah pencet di
+      // luar sheet (area gelap menutupi tombol histori/pengaturan di belakang).
+      // Untuk membuang hasil, user menekan "Batal" secara eksplisit.
+      if (bd.id === 'sheet-result') return;
       bd.hidden = true;
-      // Tutup hasil scan via backdrop saat di kamera → nyalakan lagi utk jepret ulang.
-      if (bd.id === 'sheet-result' && !$('screen-camera').hidden) startCamera();
     });
   });
 }

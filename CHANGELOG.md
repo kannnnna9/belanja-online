@@ -5,6 +5,17 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.2.2] - 2026-06-23
+
+### Fixed
+
+- **Hasil scan tak lagi hilang karena salah pencet di luar sheet.** Sebelumnya
+  menyentuh area gelap di luar sheet hasil scan (yang menutupi tombol histori/
+  pengaturan di belakang) langsung menutup sheet dan membuang item — padahal
+  user berniat menambahkannya. Kini sheet hasil scan hanya bisa ditutup lewat
+  tombol eksplisit **"Batal"** atau **"Tambah ke Keranjang"**, jadi ketukan tak
+  sengaja tidak menghanguskan item. Sheet lain tetap bisa ditutup via backdrop.
+
 ## [1.2.1] - 2026-06-23
 
 ### Fixed
@@ -194,7 +205,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.2.1]: https://github.com/kannnnna9/keranjang-pintar/compare/e211d12...main
+[1.2.2]: https://github.com/kannnnna9/keranjang-pintar/compare/883e06f...main
+[1.2.1]: https://github.com/kannnnna9/keranjang-pintar/compare/e211d12...883e06f
 [1.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/9d5d039...e211d12
 [1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...9d5d039
 [1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...0a8bb61
