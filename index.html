@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0f0b1a" />
   <title>Keranjang Pintar</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -80,6 +83,11 @@
       </div>
     </header>
 
+    <div id="history-stats" class="history-stats" hidden>
+      <div class="stat"><span>Belanja Bulan Ini</span><strong id="stat-month-total">Rp 0</strong></div>
+      <div class="stat"><span>Jumlah Sesi</span><strong id="stat-month-count">0</strong></div>
+    </div>
+
     <ul id="history-list" class="history-list"></ul>
     <p id="history-empty" class="empty">Belum ada riwayat belanja.<br />Selesaikan satu belanja untuk menyimpannya di sini.</p>
   </section>
@@ -120,6 +128,7 @@
       <input id="res-nama" type="text" class="inp" placeholder="Nama barang" />
       <label class="field-label" for="res-harga">Harga (Rp)</label>
       <input id="res-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
+      <p id="res-hint" class="res-hint" hidden></p>
       <label class="field-label">Jumlah</label>
       <div class="qty-stepper">
         <button id="res-qty-minus" class="qty-btn" type="button" aria-label="Kurangi">−</button>
@@ -163,7 +172,7 @@
         <strong id="rpd-counter">0/500</strong>
       </div>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <p class="version">Keranjang Pintar · <span id="app-version">v1.2.2</span> · tanpa backend</p>
+      <p class="version">Keranjang Pintar · <span id="app-version">v1.3.0</span> · tanpa backend</p>
     </div>
   </div>
 
@@ -214,7 +223,10 @@
         <div class="stat"><span>Jumlah Item</span><strong id="hist-detail-count">0</strong></div>
         <div class="stat"><span>Total Belanja</span><strong id="hist-detail-total">Rp 0</strong></div>
       </div>
-      <button id="btn-share-hist" class="btn btn-ghost btn-share" type="button" data-index="-1">📤 Bagikan</button>
+      <div class="hist-detail-actions">
+        <button id="btn-del-hist" class="btn btn-ghost btn-danger" type="button" data-index="-1">🗑 Hapus</button>
+        <button id="btn-share-hist" class="btn btn-ghost btn-share" type="button" data-index="-1">📤 Bagikan</button>
+      </div>
     </div>
   </div>
 

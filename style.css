@@ -258,6 +258,14 @@ body {
   line-height: 1.5;
 }
 
+/* Petunjuk pelacakan harga di sheet hasil scan ("terakhir dibeli Rp X"). */
+.res-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--accent-hov);
+  font-weight: 600;
+}
+
 .sheet-error {
   margin: 0 0 14px;
   padding: 12px 14px;
@@ -485,6 +493,14 @@ body {
 /* Tombol "Bagikan" di sheet ringkasan & detail riwayat: beri jarak dari
    konten di atasnya, tampil penuh sebelum baris aksi utama. */
 .btn-share { margin-top: 16px; }
+
+/* Baris aksi di detail riwayat: Hapus + Bagikan berdampingan. */
+.hist-detail-actions { display: flex; gap: 12px; margin-top: 16px; }
+.hist-detail-actions .btn { flex: 1; margin-top: 0; }
+
+/* Tombol bahaya (hapus): teks/aksen merah, tetap gaya ghost. */
+.btn-danger { color: #fca5a5; }
+.btn-danger:hover { border-color: #fca5a5; color: #fca5a5; }
 .version { color: var(--text-dim); font-size: 12px; text-align: center; margin-top: 18px; opacity: .7; }
 
 /* ---------- Cart / Summary list ---------- */
@@ -536,6 +552,14 @@ body {
 .ci-del:hover { color: #fca5a5; }
 
 /* ---------- Riwayat ---------- */
+/* Kartu statistik bulan ini di atas daftar riwayat. */
+.history-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 18px 4px;
+}
+
 .history-list {
   list-style: none;
   flex: 1;

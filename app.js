@@ -29,7 +29,7 @@ const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.2.2';
+const APP_VERSION = 'v1.3.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -175,6 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     showScreen('screen-setup');
   }
+
+  // Daftarkan service worker (PWA: installable + app shell jalan offline).
+  // Gagal daftar = senyap; app tetap berjalan normal tanpa SW.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 });
 
 function wireEvents() {
@@ -200,6 +206,7 @@ function wireEvents() {
   $('btn-clear-history').addEventListener('click', clearHistory);
   $('btn-export-csv').addEventListener('click', exportHistoryCsv);
   $('btn-share-hist').addEventListener('click', shareHistory);
+  $('btn-del-hist').addEventListener('click', deleteSession);
 
   // Ringkasan: bagikan daftar belanja saat ini
   $('btn-share-summary').addEventListener('click', shareSummary);
@@ -547,7 +554,33 @@ function showResult(nama, harga, title) {
   $('res-nama').value = nama;
   $('res-harga').value = harga;
   $('res-qty').value = 1; // tiap hasil baru mulai dari 1
+  showPriceHint(nama);
   openSheet('sheet-result');
+}
+
+// Cari pembelian terakhir barang bernama sama di riwayat (match nama
+// ternormalisasi: trim + huruf kecil). Riwayat tersimpan terbaru-dulu,
+// jadi kecocokan pertama = paling baru.
+function lastPurchase(nama) {
+  const key = (nama || '').trim().toLowerCase();
+  if (!key) return null;
+  for (const sesi of loadHistory()) {
+    for (const it of sesi.items) {
+      if ((it.nama || '').trim().toLowerCase() === key) return { harga: it.harga, ts: sesi.ts };
+    }
+  }
+  return null;
+}
+
+// Tampilkan petunjuk "terakhir dibeli Rp X · tgl" di sheet hasil scan bila
+// barang ini pernah dibeli sebelumnya — bantu pantau harga naik/turun.
+function showPriceHint(nama) {
+  const el = $('res-hint');
+  if (!el) return;
+  const prev = lastPurchase(nama);
+  if (!prev) { el.hidden = true; return; }
+  el.textContent = `🏷 Terakhir dibeli ${rupiah(prev.harga)} · ${fmtDateShort(prev.ts)}`;
+  el.hidden = false;
 }
 
 // Naik/turunkan nilai input jumlah, jaga minimal 1.
@@ -838,10 +871,33 @@ function fmtDate(ts) {
   return `${tgl} · ${jam}`;
 }
 
+// Tanggal ringkas (tanpa tahun/jam) untuk petunjuk harga: "12 Jun".
+function fmtDateShort(ts) {
+  return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
 function openHistory() {
   stopCamera();
   showScreen('screen-history');
   renderHistory();
+}
+
+// Hitung & tampilkan ringkasan belanja bulan berjalan (total + jumlah sesi).
+// Disembunyikan bila belum ada belanja di bulan ini.
+function renderMonthStats(data) {
+  const box = $('history-stats');
+  if (!box) return;
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  let total = 0, count = 0;
+  data.forEach((s) => {
+    const d = new Date(s.ts);
+    if (d.getFullYear() === y && d.getMonth() === m) { total += s.total; count++; }
+  });
+  if (count === 0) { box.hidden = true; return; }
+  $('stat-month-total').textContent = rupiah(total);
+  $('stat-month-count').textContent = count;
+  box.hidden = false;
 }
 
 function renderHistory() {
@@ -849,6 +905,7 @@ function renderHistory() {
   const empty = $('history-empty');
   const data = loadHistory();
   list.innerHTML = '';
+  renderMonthStats(data);
 
   if (data.length === 0) {
     empty.hidden = false;
@@ -887,6 +944,7 @@ function showHistoryDetail(i) {
   $('hist-detail-count').textContent = sesi.items.reduce((s, it) => s + itemQty(it), 0);
   $('hist-detail-total').textContent = rupiah(sesi.total);
   $('btn-share-hist').dataset.index = i; // ingat sesi mana untuk tombol Bagikan
+  $('btn-del-hist').dataset.index = i;   // …dan untuk tombol Hapus
   openSheet('sheet-history-detail');
 }
 
@@ -894,6 +952,19 @@ function clearHistory() {
   if (loadHistory().length === 0) return;
   if (!confirm('Hapus semua riwayat belanja? Tindakan ini tidak bisa dibatalkan.')) return;
   localStorage.removeItem(HISTORY_STORAGE);
+  renderHistory();
+}
+
+// Hapus satu sesi riwayat (dari sheet detail). Indeks = posisi di array
+// tersimpan (urutan terbaru-dulu), sama dengan yang dipakai saat render.
+function deleteSession() {
+  const i = parseInt($('btn-del-hist').dataset.index, 10);
+  const data = loadHistory();
+  if (!data[i]) return;
+  if (!confirm('Hapus belanja ini dari riwayat?')) return;
+  data.splice(i, 1);
+  localStorage.setItem(HISTORY_STORAGE, JSON.stringify(data));
+  closeSheet('sheet-history-detail');
   renderHistory();
 }
 

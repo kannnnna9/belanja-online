@@ -5,6 +5,26 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.3.0] - 2026-06-23
+
+### Added
+
+- **Aplikasi web progresif (PWA).** Tambah `manifest.json`, ikon (SVG + PNG
+  192/512, maskable-safe), dan service worker (`sw.js`). Keranjang Pintar kini
+  bisa **dipasang ke home screen** dan tampil layar penuh seperti app biasa.
+  Strategi cache *network-first*: saat online selalu ambil versi terbaru (deploy
+  sering), saat offline jatuh ke cache sehingga **input manual, keranjang, dan
+  riwayat tetap jalan tanpa internet** (scan tetap butuh internet karena
+  memanggil Gemini).
+- **Hapus riwayat per sesi.** Tombol 🗑 Hapus di detail belanja menghapus satu
+  sesi saja (dengan konfirmasi), tak perlu menghapus seluruh riwayat.
+- **Statistik bulanan.** Kartu di atas daftar riwayat menampilkan total belanja
+  bulan berjalan dan jumlah sesinya; tersembunyi bila belum ada belanja bulan ini.
+- **Pelacakan harga.** Saat hasil scan muncul, bila barang dengan nama sama
+  pernah dibeli, tampil petunjuk **"🏷 Terakhir dibeli Rp X · tgl"** — mudah
+  memantau harga naik/turun antar belanja. Pencocokan nama diabaikan huruf
+  besar/kecil dan spasi tepi.
+
 ## [1.2.2] - 2026-06-23
 
 ### Fixed
@@ -205,7 +225,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.2.2]: https://github.com/kannnnna9/keranjang-pintar/compare/883e06f...main
+[1.3.0]: https://github.com/kannnnna9/keranjang-pintar/compare/be9e5f2...main
+[1.2.2]: https://github.com/kannnnna9/keranjang-pintar/compare/883e06f...be9e5f2
 [1.2.1]: https://github.com/kannnnna9/keranjang-pintar/compare/e211d12...883e06f
 [1.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/9d5d039...e211d12
 [1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...9d5d039
