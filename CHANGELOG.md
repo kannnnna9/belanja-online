@@ -5,6 +5,25 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.2.0] - 2026-06-23
+
+### Added
+
+- **Keranjang anti-hilang.** Isi keranjang dan anggaran sesi kini otomatis
+  tersimpan di `localStorage` tiap kali berubah, lalu dipulihkan saat app
+  dibuka lagi. Tutup tab, refresh, atau HP restart di tengah belanja tidak
+  lagi membuat keranjang lenyap — belanja bisa dilanjutkan. Simpanan dibuang
+  saat "Belanja Baru". Catatan: menghapus cache/data situs di browser tetap
+  menghapus keranjang ini (sama seperti API key & riwayat), karena app statis
+  tanpa backend.
+- **Bagikan daftar belanja.** Tombol "📤 Bagikan" di ringkasan belanja dan
+  detail riwayat merangkai daftar item + total jadi teks dan membuka Web Share
+  (pilih WhatsApp dll). Peramban tanpa Web Share jatuh ke tautan `wa.me`.
+- **Ekspor riwayat ke CSV.** Tombol ⬇ di layar Riwayat mengunduh seluruh
+  riwayat belanja sebagai berkas CSV (kolom: Tanggal, Barang, Harga, Jumlah,
+  Subtotal; satu baris per item) — siap dibuka di spreadsheet. Berkas memakai
+  BOM UTF-8 agar nama ber-aksen terbaca benar di Excel.
+
 ## [1.1.1] - 2026-06-23
 
 ### Changed
@@ -164,7 +183,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...main
+[1.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/9d5d039...main
+[1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...9d5d039
 [1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...0a8bb61
 [1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...4d24410
 [0.5.0]: https://github.com/kannnnna9/keranjang-pintar/commit/57cf85f

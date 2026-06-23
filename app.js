@@ -25,10 +25,11 @@ const RPD_LIMIT = 500;  // request per hari
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
+const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.1.1';
+const APP_VERSION = 'v1.2.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -43,6 +44,30 @@ let lastShot = null;    // base64 JPEG hasil jepret terakhir (untuk "Ulangi")
 let editIndex = -1;     // indeks item keranjang yang sedang diedit (-1 = tidak ada)
 let sessionSaved = false; // true bila komposisi keranjang ini sudah masuk riwayat
 let budget = 0;         // anggaran sesi ini (Rp); 0 = belum diatur. Per sesi, reset saat belanja baru.
+
+/* ---------- Keranjang anti-hilang ----------
+   Keranjang & anggaran sesi disimpan ke localStorage tiap kali berubah,
+   lalu dipulihkan saat app dibuka lagi. Ini menutup celah "tutup tab /
+   refresh / HP restart = keranjang lenyap". Catatan keterbatasan: karena
+   localStorage termasuk "data situs", menghapus cache/data situs di browser
+   TETAP menghapus keranjang ini (sama seperti API key & riwayat) — di luar
+   kendali app statis tanpa backend. */
+function persistCart() {
+  try {
+    localStorage.setItem(CART_STORAGE, JSON.stringify({ cart, budget, sessionSaved }));
+  } catch (_) {} // kuota localStorage penuh / mode privat → biarkan, jangan ganggu belanja
+}
+
+function restoreCart() {
+  try {
+    const o = JSON.parse(localStorage.getItem(CART_STORAGE));
+    if (o && Array.isArray(o.cart)) {
+      cart = o.cart;
+      budget = Number(o.budget) || 0;
+      sessionSaved = !!o.sessionSaved;
+    }
+  } catch (_) {} // data rusak → mulai dengan keranjang kosong, jangan blokir app
+}
 
 /* ---------- Util DOM ---------- */
 const $ = (id) => document.getElementById(id);
@@ -126,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderQuota();
   setInterval(renderQuota, 5000);
   if (getKey()) {
+    restoreCart(); // pulihkan keranjang & anggaran sesi sebelumnya bila ada
     enterDashboard();
   } else {
     showScreen('screen-setup');
@@ -153,6 +179,11 @@ function wireEvents() {
   // Riwayat
   $('btn-history-back').addEventListener('click', enterDashboard);
   $('btn-clear-history').addEventListener('click', clearHistory);
+  $('btn-export-csv').addEventListener('click', exportHistoryCsv);
+  $('btn-share-hist').addEventListener('click', shareHistory);
+
+  // Ringkasan: bagikan daftar belanja saat ini
+  $('btn-share-summary').addEventListener('click', shareSummary);
 
   // Edit item keranjang
   $('btn-edit-save').addEventListener('click', saveEdit);
@@ -526,6 +557,7 @@ function addToCart() {
 
   cart.push({ nama, harga, qty });
   sessionSaved = false; // keranjang berubah → boleh dicatat ulang
+  persistCart();
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
   enterDashboard(); // selesai tambah → kembali ke dashboard
@@ -591,6 +623,7 @@ function renderCart() {
 function removeItem(i) {
   cart.splice(i, 1);
   sessionSaved = false; // keranjang berubah → boleh dicatat ulang
+  persistCart();
   renderCart();
 }
 
@@ -618,6 +651,7 @@ function saveEdit() {
   cart[editIndex] = { nama, harga, qty };
   editIndex = -1;
   sessionSaved = false;
+  persistCart();
   closeSheet('sheet-edit');
   renderCart(); // total ikut diperbarui
 }
@@ -638,12 +672,14 @@ function openBudget() {
 function saveBudget() {
   const val = parseInt($('budget-input').value, 10);
   budget = isNaN(val) || val <= 0 ? 0 : val; // ≤0 / kosong = anggap tak diatur
+  persistCart(); // anggaran ikut tersimpan bersama keranjang sesi
   closeSheet('sheet-budget');
   renderBudget();
 }
 
 function clearBudget() {
   budget = 0;
+  persistCart();
   closeSheet('sheet-budget');
   renderBudget();
 }
@@ -729,6 +765,7 @@ function finishShopping() {
   if (!sessionSaved) {
     recordSession();
     sessionSaved = true;
+    persistCart(); // tandai tersimpan agar reload tak mencatat ganda
   }
 
   const list = $('summary-list');
@@ -747,6 +784,7 @@ function newShopping() {
   lastShot = null;
   sessionSaved = false;
   budget = 0; // anggaran per sesi → reset saat mulai belanja baru
+  localStorage.removeItem(CART_STORAGE); // belanja kelar → buang simpanan keranjang
   closeSheet('sheet-summary');
   renderCart();
 }
@@ -826,6 +864,7 @@ function showHistoryDetail(i) {
   $('hist-detail-title').textContent = fmtDate(sesi.ts);
   $('hist-detail-count').textContent = sesi.items.reduce((s, it) => s + itemQty(it), 0);
   $('hist-detail-total').textContent = rupiah(sesi.total);
+  $('btn-share-hist').dataset.index = i; // ingat sesi mana untuk tombol Bagikan
   openSheet('sheet-history-detail');
 }
 
@@ -834,4 +873,85 @@ function clearHistory() {
   if (!confirm('Hapus semua riwayat belanja? Tindakan ini tidak bisa dibatalkan.')) return;
   localStorage.removeItem(HISTORY_STORAGE);
   renderHistory();
+}
+
+/* ============================================================
+   BAGIKAN & EKSPOR
+   Bagikan: rangkai daftar belanja jadi teks → Web Share API (muncul
+   pilihan WhatsApp/dll). Bila peramban tak punya navigator.share,
+   jatuh ke tautan wa.me. Ekspor: seluruh riwayat → berkas CSV.
+   ============================================================ */
+
+// Rangkai daftar item + total jadi teks siap-bagi (dipakai ringkasan & riwayat).
+function buildShareText(items, total, ts) {
+  const baris = items.map((it) => {
+    const q = itemQty(it);
+    const rinci = q > 1 ? `${q} × ${rupiah(it.harga)} = ${rupiah(itemSub(it))}` : rupiah(itemSub(it));
+    return `• ${it.nama} — ${rinci}`;
+  });
+  const unit = items.reduce((s, it) => s + itemQty(it), 0);
+  return [
+    '🛒 Belanja Keranjang Pintar',
+    fmtDate(ts),
+    '',
+    ...baris,
+    '',
+    `Total: ${rupiah(total)} (${unit} item)`,
+  ].join('\n');
+}
+
+async function shareList(items, total, ts) {
+  if (!items || items.length === 0) return;
+  const text = buildShareText(items, total, ts);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Belanja Keranjang Pintar', text });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user batal → jangan buka fallback
+      // error lain (mis. tak diizinkan) → lanjut ke fallback wa.me
+    }
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+// Bagikan keranjang yang sedang aktif (dari sheet Ringkasan).
+function shareSummary() { shareList(cart, cartTotal(), Date.now()); }
+
+// Bagikan satu sesi riwayat (dari sheet Detail Riwayat). Indeks disimpan
+// di dataset tombol saat detail dibuka.
+function shareHistory() {
+  const i = parseInt($('btn-share-hist').dataset.index, 10);
+  const sesi = loadHistory()[i];
+  if (sesi) shareList(sesi.items, sesi.total, sesi.ts);
+}
+
+// Bungkus satu sel CSV: kutip bila mengandung koma, kutip, atau baris baru.
+function csvCell(v) {
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function exportHistoryCsv() {
+  const data = loadHistory();
+  if (data.length === 0) return;
+  // Satu baris per item, plus kolom info sesi → mudah dipivot di spreadsheet.
+  const rows = [['Tanggal', 'Barang', 'Harga', 'Jumlah', 'Subtotal']];
+  data.forEach((sesi) => {
+    sesi.items.forEach((it) => {
+      const q = itemQty(it);
+      rows.push([fmtDate(sesi.ts), it.nama, it.harga, q, itemSub(it)]);
+    });
+  });
+  const csv = rows.map((r) => r.map(csvCell).join(',')).join('\n');
+  // ﻿ (BOM) agar Excel membaca UTF-8 → nama barang ber-aksen tetap benar.
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const tgl = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  a.href = url;
+  a.download = `keranjang-pintar-riwayat-${tgl}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }

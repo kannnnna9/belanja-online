@@ -482,6 +482,9 @@ body {
   margin-top: 22px;
 }
 .settings-note { color: var(--text-dim); font-size: 14px; margin: 10px 0 18px; }
+/* Tombol "Bagikan" di sheet ringkasan & detail riwayat: beri jarak dari
+   konten di atasnya, tampil penuh sebelum baris aksi utama. */
+.btn-share { margin-top: 16px; }
 .version { color: var(--text-dim); font-size: 12px; text-align: center; margin-top: 18px; opacity: .7; }
 
 /* ---------- Cart / Summary list ---------- */

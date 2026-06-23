@@ -74,7 +74,10 @@
     <header class="topbar">
       <button id="btn-history-back" class="icon-btn" type="button" aria-label="Kembali">←</button>
       <h2 class="topbar-title">Riwayat Belanja</h2>
-      <button id="btn-clear-history" class="icon-btn" type="button" aria-label="Hapus Riwayat">🗑</button>
+      <div class="topbar-actions">
+        <button id="btn-export-csv" class="icon-btn" type="button" aria-label="Ekspor CSV">⬇</button>
+        <button id="btn-clear-history" class="icon-btn" type="button" aria-label="Hapus Riwayat">🗑</button>
+      </div>
     </header>
 
     <ul id="history-list" class="history-list"></ul>
@@ -139,6 +142,7 @@
         <div class="stat"><span>Jumlah Item</span><strong id="sum-count">0</strong></div>
         <div class="stat"><span>Total Belanja</span><strong id="sum-total">Rp 0</strong></div>
       </div>
+      <button id="btn-share-summary" class="btn btn-ghost btn-share" type="button">📤 Bagikan Daftar</button>
       <div class="sheet-actions">
         <button id="btn-close-summary" class="btn btn-ghost" type="button">Tutup</button>
         <button id="btn-new" class="btn btn-primary" type="button">Belanja Baru</button>
@@ -159,7 +163,7 @@
         <strong id="rpd-counter">0/500</strong>
       </div>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <p class="version">Keranjang Pintar · <span id="app-version">v1.1.1</span> · tanpa backend</p>
+      <p class="version">Keranjang Pintar · <span id="app-version">v1.2.0</span> · tanpa backend</p>
     </div>
   </div>
 
@@ -210,6 +214,7 @@
         <div class="stat"><span>Jumlah Item</span><strong id="hist-detail-count">0</strong></div>
         <div class="stat"><span>Total Belanja</span><strong id="hist-detail-total">Rp 0</strong></div>
       </div>
+      <button id="btn-share-hist" class="btn btn-ghost btn-share" type="button" data-index="-1">📤 Bagikan</button>
     </div>
   </div>
 
