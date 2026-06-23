@@ -48,17 +48,16 @@
     <p id="cart-empty" class="empty">Keranjang masih kosong.<br />Tap “Tambah Item” untuk mulai scan.</p>
 
     <div class="dash-foot">
-      <button id="budget-bar" class="budget" type="button">
-        <div class="budget-head">
-          <span id="budget-label">Atur Anggaran</span>
-          <span id="budget-remain"></span>
+      <button id="budget-bar" class="total-budget" type="button">
+        <div class="total-row">
+          <span>Total</span>
+          <span class="total-val">
+            <strong id="cart-total">Rp 0</strong>
+            <span id="budget-remain" class="budget-remain"></span>
+          </span>
         </div>
-        <div class="budget-track"><div id="budget-fill" class="budget-fill"></div></div>
+        <div id="budget-track" class="budget-track" hidden><div id="budget-fill" class="budget-fill"></div></div>
       </button>
-      <div class="total-row">
-        <span>Total</span>
-        <strong id="cart-total">Rp 0</strong>
-      </div>
       <div id="quota-indicator" class="quota quota-ok">⚡ Siap</div>
       <button id="btn-add-item" class="btn btn-primary">📷 Tambah Item</button>
       <div class="dash-foot-row">

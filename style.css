@@ -378,34 +378,31 @@ body {
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* ---------- Bar anggaran (per sesi) ---------- */
-.budget {
+/* ---------- Total + anggaran (per sesi) ----------
+   Anggaran menyatu dengan baris Total agar footer tak sesak: angka total
+   di kanan, "sisa/lewat Rp X" menempel di bawahnya, bar tipis muncul hanya
+   bila anggaran diatur. Seluruh blok jadi tombol untuk atur/ubah anggaran. */
+.total-budget {
+  display: block;
   width: 100%;
   text-align: left;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px;
+  background: transparent;
+  border: none;
+  padding: 0;
   margin-bottom: 14px;
   cursor: pointer;
-  transition: border-color .15s;
+  color: inherit;
+  font: inherit;
 }
-.budget:hover { border-color: var(--accent); }
-.budget-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-#budget-label { color: var(--text-dim); }
-#budget-remain { font-weight: 700; }
+.total-budget .total-row { margin-bottom: 0; }
+.total-val { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.budget-remain { font-size: 13px; font-weight: 700; line-height: 1; }
 .budget-track {
-  height: 7px;
+  height: 6px;
   background: var(--border);
   border-radius: 4px;
   overflow: hidden;
+  margin-top: 9px;
 }
 .budget-fill {
   height: 100%;
@@ -414,14 +411,12 @@ body {
   background: var(--accent);
   transition: width .25s ease, background .25s;
 }
-/* Bar belum diatur: track samar, tanpa isi. */
-.budget-unset .budget-track { opacity: .5; }
 /* Tingkat: mendekati (≥80%) oranye, lewat anggaran merah. */
 .budget-near .budget-fill { background: #fbbf24; }
-.budget-near #budget-remain { color: #fbbf24; }
+.budget-near .budget-remain { color: #fbbf24; }
 .budget-over .budget-fill { background: #fca5a5; }
-.budget-over #budget-remain { color: #fca5a5; }
-.budget-ok #budget-remain { color: var(--accent-hov); }
+.budget-over .budget-remain { color: #fca5a5; }
+.budget-ok .budget-remain { color: var(--accent-hov); }
 
 /* ============================================================
    OVERLAY LOADING

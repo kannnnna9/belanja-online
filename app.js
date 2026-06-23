@@ -648,18 +648,20 @@ function clearBudget() {
   renderBudget();
 }
 
-// Render bar anggaran di dashboard sesuai total keranjang saat ini.
+// Render baris Total + anggaran di dashboard sesuai total keranjang saat ini.
 function renderBudget() {
   const bar = $('budget-bar');
-  const label = $('budget-label');
   const remain = $('budget-remain');
+  const track = $('budget-track');
   const fill = $('budget-fill');
   if (!bar) return;
 
+  // Belum diatur: baris Total bersih, bar disembunyikan, beri petunjuk halus.
   if (budget <= 0) {
-    bar.className = 'budget budget-unset';
-    label.textContent = 'Atur Anggaran';
-    remain.textContent = '';
+    bar.className = 'total-budget';
+    remain.textContent = 'atur anggaran';
+    remain.style.color = 'var(--text-dim)';
+    track.hidden = true;
     fill.style.width = '0';
     return;
   }
@@ -667,8 +669,9 @@ function renderBudget() {
   const total = cartTotal();
   const ratio = total / budget;
   const sisa = budget - total;
+  track.hidden = false;
   fill.style.width = Math.min(100, ratio * 100) + '%';
-  label.textContent = `Anggaran ${rupiah(budget)}`;
+  remain.style.color = ''; // warna diatur lewat kelas tingkat di CSS
 
   let level;
   if (sisa < 0) {
@@ -681,7 +684,7 @@ function renderBudget() {
     level = 'budget-ok';
     remain.textContent = `sisa ${rupiah(sisa)}`;
   }
-  bar.className = 'budget ' + level;
+  bar.className = 'total-budget ' + level;
 }
 
 // Dipanggil sebelum menambah/menaikkan nilai keranjang sebesar `tambahan`.
