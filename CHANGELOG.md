@@ -5,6 +5,27 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.0.0] - 2026-06-23
+
+### Changed
+
+- **Ganti nama aplikasi** dari "BelanjaCatat Online" menjadi **"Keranjang
+  Pintar"**. Nama lama terasa kurang pas; nama baru memosisikan app sebagai
+  asisten belanja (bukan sekadar pencatat) dan memberi ruang untuk fitur
+  lanjutan (anggaran, jumlah per item, pelacakan harga). Judul, brand layar
+  setup, judul tab, dan teks versi disesuaikan. Prefix `localStorage` `bco_`
+  sengaja **dipertahankan** agar API key & riwayat user yang sudah ada tidak
+  hilang setelah rename.
+- Repo dan URL GitHub Pages pindah dari `belanja-online` ke `keranjang-pintar`
+  (`https://kannnnna9.github.io/keranjang-pintar/`). README diselaraskan.
+
+### Removed
+
+- Buang instruksi & troubleshooting untuk API key format lama (`AIza…`),
+  termasuk pengaturan HTTP referrer restriction. Panduan kini hanya
+  mengarahkan pembuatan key baru format `AQ.` yang otomatis terbatas ke
+  Generative Language API, jadi tak perlu konfigurasi tambahan.
+
 ## [0.5.0] - 2026-06-22
 
 ### Changed
@@ -113,24 +134,25 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[0.5.0]: https://github.com/kannnnna9/belanja-online/compare/57cf85f...main
-[0.4.0]: https://github.com/kannnnna9/belanja-online/compare/bca2427...main
-[0.3.0]: https://github.com/kannnnna9/belanja-online/compare/ede8107...674a20a
-[0.2.2]: https://github.com/kannnnna9/belanja-online/compare/cba4120...ede8107
-[0.2.1]: https://github.com/kannnnna9/belanja-online/compare/c05cd6d...cba4120
-[0.2.0]: https://github.com/kannnnna9/belanja-online/compare/5fd5685...c05cd6d
-[0.1.1]: https://github.com/kannnnna9/belanja-online/compare/a41a163...5fd5685
-[0.1.0]: https://github.com/kannnnna9/belanja-online/commit/a41a163
+[1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...main
+[0.5.0]: https://github.com/kannnnna9/keranjang-pintar/commit/57cf85f
+[0.4.0]: https://github.com/kannnnna9/keranjang-pintar/compare/bca2427...main
+[0.3.0]: https://github.com/kannnnna9/keranjang-pintar/compare/ede8107...674a20a
+[0.2.2]: https://github.com/kannnnna9/keranjang-pintar/compare/cba4120...ede8107
+[0.2.1]: https://github.com/kannnnna9/keranjang-pintar/compare/c05cd6d...cba4120
+[0.2.0]: https://github.com/kannnnna9/keranjang-pintar/compare/5fd5685...c05cd6d
+[0.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/a41a163...5fd5685
+[0.1.0]: https://github.com/kannnnna9/keranjang-pintar/commit/a41a163
 
-[a41a163]: https://github.com/kannnnna9/belanja-online/commit/a41a163
-[5fd5685]: https://github.com/kannnnna9/belanja-online/commit/5fd5685
-[c05cd6d]: https://github.com/kannnnna9/belanja-online/commit/c05cd6d
-[cba4120]: https://github.com/kannnnna9/belanja-online/commit/cba4120
-[5cf5ba4]: https://github.com/kannnnna9/belanja-online/commit/5cf5ba4
-[71d6ad3]: https://github.com/kannnnna9/belanja-online/commit/71d6ad3
-[9160343]: https://github.com/kannnnna9/belanja-online/commit/9160343
-[ede8107]: https://github.com/kannnnna9/belanja-online/commit/ede8107
-[674a20a]: https://github.com/kannnnna9/belanja-online/commit/674a20a
-[f33760d]: https://github.com/kannnnna9/belanja-online/commit/f33760d
-[57cf85f]: https://github.com/kannnnna9/belanja-online/commit/57cf85f
-[main]: https://github.com/kannnnna9/belanja-online/commits/main
+[a41a163]: https://github.com/kannnnna9/keranjang-pintar/commit/a41a163
+[5fd5685]: https://github.com/kannnnna9/keranjang-pintar/commit/5fd5685
+[c05cd6d]: https://github.com/kannnnna9/keranjang-pintar/commit/c05cd6d
+[cba4120]: https://github.com/kannnnna9/keranjang-pintar/commit/cba4120
+[5cf5ba4]: https://github.com/kannnnna9/keranjang-pintar/commit/5cf5ba4
+[71d6ad3]: https://github.com/kannnnna9/keranjang-pintar/commit/71d6ad3
+[9160343]: https://github.com/kannnnna9/keranjang-pintar/commit/9160343
+[ede8107]: https://github.com/kannnnna9/keranjang-pintar/commit/ede8107
+[674a20a]: https://github.com/kannnnna9/keranjang-pintar/commit/674a20a
+[f33760d]: https://github.com/kannnnna9/keranjang-pintar/commit/f33760d
+[57cf85f]: https://github.com/kannnnna9/keranjang-pintar/commit/57cf85f
+[main]: https://github.com/kannnnna9/keranjang-pintar/commits/main

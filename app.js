@@ -1,7 +1,10 @@
 /* ============================================================
-   BelanjaCatat Online — app.js
+   Keranjang Pintar — app.js
    App statis, tanpa backend. Pola BYOK: API key Gemini disimpan
    di localStorage browser user. Satu jepret = satu label harga.
+   Catatan: prefix localStorage 'bco_' dipertahankan (bukan diganti)
+   agar data lama user (API key & riwayat) tetap terbaca setelah
+   rename app dari "BelanjaCatat Online".
    ============================================================ */
 
 'use strict';
@@ -25,7 +28,7 @@ const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v0.5.0';
+const APP_VERSION = 'v1.0.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',

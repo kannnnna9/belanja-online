@@ -1,6 +1,8 @@
-# BelanjaCatat Online
+# Keranjang Pintar
 
 Catat belanja pakai kamera. Foto label harga di rak, AI-nya (Google Gemini) baca nama barang sama harganya, langsung masuk keranjang. Tinggal jepret, nggak usah ngetik satu-satu.
+
+Dibuat buat belanja di supermarket dan minimarket — di mana barang ditata di rak dengan label harga.
 
 Appnya jalan di browser, gratis, tanpa server. Kamu pakai API key Gemini punyamu sendiri, dan key itu cuma disimpan di browsermu.
 
@@ -8,7 +10,7 @@ Appnya jalan di browser, gratis, tanpa server. Kamu pakai API key Gemini punyamu
 
 Nggak usah bikin repo atau install apa-apa. Tinggal buka ini di HP:
 
-**https://kannnnna9.github.io/belanja-online/**
+**https://kannnnna9.github.io/keranjang-pintar/**
 
 Pertama kali buka, dia minta API key Gemini (cara dapetnya di bawah, gratis). Tempel sekali, habis itu kepakai terus di HP itu.
 
@@ -29,39 +31,20 @@ Keranjang nggak disimpan permanen, cuma bertahan selama tab kebuka. Tutup tab, k
 1. Buka https://aistudio.google.com, login Google.
 2. Klik "Get API Key".
 3. Klik "Create API key", pilih project atau bikin baru.
-4. Salin key-nya. Bentuknya bisa yang lama (`AIza...`) atau yang baru (`AQ.`).
+4. Salin key-nya. Key baru bentuknya diawali `AQ.`.
 5. Tempel ke app.
 
-Jatah gratisnya cukup buat belanja harian, kira-kira 1.500 panggilan sehari per akun Google.
+Jatah gratisnya cukup buat belanja harian.
+
+Key `AQ.` udah otomatis aman: dia kebatasi ke Generative Language API sejak dibuat, jadi nggak usah atur apa-apa lagi. Tinggal tempel dan jalan.
 
 Soal "gratis": kebanyakan akun Google biasa langsung jalan. Tapi sebagian kecil akun kadang diblokir otomatis sama Google (muncul "project has been denied access"). Itu salah deteksi dari pihak Google, bukan masalah appnya. Kalau kamu kena, lihat bagian "Kalau scan gagal" di bawah.
-
-## Soal keamanan key
-
-Mulai 19 Juni 2026 Google nolak API key yang nggak dibatasi.
-
-Kalau key-mu format baru (`AQ.`), dia udah otomatis kebatasi ke Generative Language API. Nggak usah atur apa-apa, lewati bagian ini.
-
-Kalau key-mu format lama (`AIza...`), kamu harus batasi sendiri:
-
-1. Buka https://console.cloud.google.com/apis/credentials, di project yang sama sama key-mu.
-2. Klik nama key-nya.
-3. Di Application restrictions, pilih HTTP referrers.
-4. Masukin domain tempat appnya jalan. Kalau kamu pakai linkku, isinya:
-   ```
-   https://kannnnna9.github.io/*
-   ```
-   Kalau host sendiri, ganti sama domainmu.
-5. Di API restrictions, batasi ke Generative Language API aja.
-6. Save, tunggu beberapa menit sampai aktif.
-
-Gunanya: kalaupun key-mu bocor, orang lain nggak bisa pakai dari domain lain.
 
 ## Kalau scan gagal
 
 Pesan error asli dari Google muncul di panel hasil, warnanya merah. Baca itu buat tau masalahnya:
 
-- Muncul "You exceeded your current quota" atau "limit: 0": model AI-nya lagi nggak punya jatah gratis, biasanya gara-gara modelnya udah dihentikan Google. App ini udah pakai `gemini-flash-latest` yang selalu ngikut model Flash terbaru, jadi mestinya jarang kejadian. Kalau tetap muncul, tunggu kuotanya reset (tengah malam waktu Pasifik, sekitar jam 2 siang WIB).
+- Muncul "You exceeded your current quota" atau "limit: 0": kuota model lagi habis. App ini pakai `gemini-3.1-flash-lite` yang jatah gratisnya longgar (15 request/menit, 500/hari), jadi mestinya jarang kejadian. Kalau tetap muncul, tunggu kuotanya reset (tengah malam waktu Pasifik, sekitar jam 2 siang WIB).
 - Muncul "Your project has been denied access": akunmu kena blokir otomatis Google. App sama key-mu sebenernya nggak salah. Yang bisa dicoba, dari yang paling gampang: (1) pakai API key dari akun Google lain; (2) aktifin billing di project Cloud-mu, tetap gratis selama pemakaian di bawah limit, cuma project yang ada billing-nya lebih dipercaya Google jadi lolos blokir; (3) minta ditinjau di forum https://discuss.ai.google.dev, tapi ini lama.
 - Muncul "API key not valid": key-nya salah atau ada spasi keikut. Tempel ulang lewat ⚙ > Ganti API Key.
 - Kamera nggak nongol: pastiin halaman dibuka lewat HTTPS dan izin kameranya udah dikasih.
@@ -70,22 +53,22 @@ Pesan error asli dari Google muncul di panel hasil, warnanya merah. Baca itu bua
 
 Buat kebanyakan orang, cukup pakai link di atas. Tapi kalau kamu pengen punya salinan sendiri, misalnya mau ngoprek kodenya, pakai domain sendiri, atau biar yakin nggak ada kode aneh, caranya gampang:
 
-1. Bikin repo baru, upload isi folder `belanja-online/` (`index.html`, `style.css`, `app.js`, `README.md`).
+1. Bikin repo baru, upload isi folder ini (`index.html`, `style.css`, `app.js`, `README.md`).
 2. Di Settings > Pages, pilih branch (misal `main`) folder root.
 3. Tunggu URL-nya keluar: `https://NAMA-AKUN.github.io/NAMA-REPO/`.
-4. Buka di HP. Kalau key-mu format lama, atur referrer restriction sesuai URL itu.
+4. Buka di HP.
 
 ## Isi folder
 
 ```
-belanja-online/
+keranjang-pintar/
 ├── index.html   UI + layar setup key
 ├── style.css    Tampilan (palet "Ungu Lembut")
 ├── app.js       Kamera, panggil Gemini, keranjang, ringkasan
 └── README.md    File ini
 ```
 
-Model AI-nya diatur di konstanta `MODEL` paling atas `app.js`. Sekarang isinya `gemini-flash-latest`, alias yang selalu nunjuk model Flash terbaru biar nggak ikut mati pas Google nyetop versi tertentu (kayak `gemini-2.0-flash` yang dimatiin 1 Juni 2026). Kalau mau dipaku ke versi tetap, ganti ke `gemini-2.5-flash-lite`.
+Model AI-nya diatur di konstanta `MODEL` paling atas `app.js`. Sekarang isinya `gemini-3.1-flash-lite`, dipaku ke id stabil (bukan alias `-latest`) karena jatah gratisnya paling longgar dan nggak ikut hot-swap ke rilis ber-limit lebih ketat.
 
 ## Privasi
 
