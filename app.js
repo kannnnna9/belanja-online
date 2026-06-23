@@ -29,7 +29,7 @@ const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.3.0';
+const APP_VERSION = 'v1.4.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -79,6 +79,40 @@ function showScreen(id) {
 }
 function openSheet(id) { $(id).hidden = false; }
 function closeSheet(id) { $(id).hidden = true; }
+
+/* ============================================================
+   IKON (SVG line, satu sumber kebenaran)
+   Ganti emoji warna-warni dengan ikon garis bergaya seragam yang mewarisi
+   warna teks (stroke=currentColor) → otomatis ikut palet "Ungu Lembut".
+   Statis: tombol ber-atribut [data-icon] dihidrasi saat load.
+   Dinamis: dipanggil lewat svgIcon() di render kuota, item, & hint.
+   ============================================================ */
+const ICONS = {
+  clock:    '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3.2 1.8"/>',
+  settings: '<path d="M20 7h-8.5"/><path d="M12.5 17H4"/><circle cx="16.5" cy="17" r="2.6"/><circle cx="7.5" cy="7" r="2.6"/>',
+  download: '<path d="M12 3.5v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 20.5h15"/>',
+  trash:    '<path d="M3.5 6.5h17"/><path d="M9 6.5V4.5h6v2"/><path d="M6 6.5l1 13a1.6 1.6 0 0 0 1.6 1.5h6.8A1.6 1.6 0 0 0 17 19.5l1-13"/><path d="M10 10.5v7M14 10.5v7"/>',
+  camera:   '<path d="M14.5 4.5h-5L8 7H4.2A2.2 2.2 0 0 0 2 9.2v9.3A2.2 2.2 0 0 0 4.2 20.7h15.6A2.2 2.2 0 0 0 22 18.5V9.2A2.2 2.2 0 0 0 19.8 7H16z"/><circle cx="12" cy="13.2" r="3.6"/>',
+  image:    '<rect x="3" y="3.5" width="18" height="17" rx="2.4"/><circle cx="8.5" cy="9" r="1.6"/><path d="m21 15.5-5-5L4.5 21"/>',
+  share:    '<circle cx="18" cy="5.5" r="2.8"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="18.5" r="2.8"/><path d="m8.5 13.4 7 3.7M15.5 6.9l-7 3.7"/>',
+  zap:      '<path d="M13 2.5 4.5 13.5H11l-1 8L19.5 10H13z"/>',
+  alert:    '<path d="M10.3 4 1.9 18.2A2 2 0 0 0 3.6 21.2h16.8a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4.5M12 17.5h.01"/>',
+  timer:    '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.4 1.4"/><path d="M9.5 2.5h5"/>',
+  tag:      '<path d="M3 7v4.7a2 2 0 0 0 .6 1.4l7.6 7.6a2 2 0 0 0 2.8 0l5.3-5.3a2 2 0 0 0 0-2.8L11.7 5a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2Z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
+  cart:     '<circle cx="9.5" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2.5 3.5H5l2.3 11.4a1.6 1.6 0 0 0 1.6 1.3h8.5a1.6 1.6 0 0 0 1.6-1.3L21.5 7.5H6"/>',
+  receipt:  '<path d="M5 3.5v17l2-1 2 1 2-1 2 1 2-1 2 1v-17l-2 1-2-1-2 1-2-1-2 1Z"/><path d="M9 8.5h6M9 12.5h6"/>',
+};
+function svgIcon(name, size = 20) {
+  return `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+// Hidrasi tombol statis: sisipkan SVG di awal (teks label, kalau ada, tetap).
+function hydrateIcons(root = document) {
+  root.querySelectorAll('[data-icon]').forEach((el) => {
+    const size = el.classList.contains('empty') ? 40 : (el.dataset.iconSize ? +el.dataset.iconSize : 20);
+    el.insertAdjacentHTML('afterbegin', svgIcon(el.dataset.icon, size));
+    el.removeAttribute('data-icon'); // tandai sudah dihidrasi → aman dipanggil ulang
+  });
+}
 
 /* ============================================================
    INDIKATOR KUOTA (rate-limit)
@@ -143,13 +177,13 @@ function renderQuota() {
   const el = $('quota-indicator');
   if (el) {
     if (limitHit) {
-      el.textContent = '❌ Limit';
+      el.innerHTML = svgIcon('alert', 16) + '<span>Limit</span>';
       el.className = 'quota quota-limit';
     } else if (reqTimes.length === 0) {
-      el.textContent = '⚡ Siap';
+      el.innerHTML = svgIcon('zap', 16) + '<span>Siap</span>';
       el.className = 'quota quota-ok';
     } else {
-      el.textContent = `⏳ ${reqTimes.length}/${RPM_LIMIT} RPM`;
+      el.innerHTML = svgIcon('timer', 16) + `<span>${reqTimes.length}/${RPM_LIMIT} RPM</span>`;
       el.className = 'quota quota-busy';
     }
   }
@@ -162,6 +196,7 @@ function renderQuota() {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
+  hydrateIcons(); // sisipkan SVG ke semua tombol [data-icon] statis
   const ver = $('app-version');
   if (ver) ver.textContent = APP_VERSION;
   // Pulihkan hitungan RPM dari sesi sebelumnya (timestamp >60s dibuang),
@@ -197,8 +232,12 @@ function wireEvents() {
   $('btn-settings').addEventListener('click', () => { renderQuota(); openSheet('sheet-settings'); });
   $('btn-history').addEventListener('click', openHistory);
 
-  // Uji galeri: pilih gambar dari penyimpanan → pipeline scan yang sama
-  $('btn-gallery').addEventListener('click', () => $('gallery-input').click());
+  // Uji galeri (dari pengaturan): tutup sheet dulu, lalu pilih gambar dari
+  // penyimpanan → pipeline scan yang sama.
+  $('btn-gallery').addEventListener('click', () => {
+    closeSheet('sheet-settings');
+    $('gallery-input').click();
+  });
   $('gallery-input').addEventListener('change', onGalleryPick);
 
   // Riwayat
@@ -579,7 +618,7 @@ function showPriceHint(nama) {
   if (!el) return;
   const prev = lastPurchase(nama);
   if (!prev) { el.hidden = true; return; }
-  el.textContent = `🏷 Terakhir dibeli ${rupiah(prev.harga)} · ${fmtDateShort(prev.ts)}`;
+  el.innerHTML = svgIcon('tag', 15) + `<span>Terakhir dibeli ${rupiah(prev.harga)} · ${fmtDateShort(prev.ts)}</span>`;
   el.hidden = false;
 }
 
@@ -665,7 +704,7 @@ function renderCart() {
         </span>
         <span class="ci-price">${rupiah(itemSub(it))}</span>
       </button>
-      <button class="ci-del" aria-label="Hapus">🗑</button>`;
+      <button class="ci-del" aria-label="Hapus">${svgIcon('trash', 18)}</button>`;
     li.querySelector('.ci-name').textContent = it.nama;
     // Tampilkan rincian "qty × harga" hanya bila lebih dari 1 unit.
     li.querySelector('.ci-qty').textContent = q > 1 ? `${q} × ${rupiah(it.harga)}` : '';

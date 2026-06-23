@@ -5,6 +5,29 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.4.0] - 2026-06-23
+
+### Changed
+
+- **Set ikon baru senada palet.** Semua emoji warna-warni (🕘 ⚙ 📷 🖼 ⬇ 🗑 📤
+  ⚡ 🏷) diganti **ikon garis (SVG line)** yang mewarisi warna teks lewat
+  `currentColor`, jadi selalu serasi palet "Ungu Lembut". Satu sumber kebenaran
+  di `app.js` (`ICONS` + `svgIcon()`), tombol statis dihidrasi via `[data-icon]`.
+- **Uji Galeri pindah ke Pengaturan.** Tombol "Uji dari Galeri" dikeluarkan dari
+  footer dashboard ke sheet Pengaturan supaya tampilan keranjang lebih simpel;
+  "Input Manual" dan "Selesai" kini sebaris.
+- **Indikator kuota lebih halus.** Status Siap/Limit/RPM kini ikon + label
+  sebaris, bukan emoji.
+
+### Added
+
+- **Atmosfer & kedalaman.** Cahaya aksen lembut menyebar dari atas layar
+  (radial gradient dalam palet), memberi dimensi tanpa mengubah warna dasar.
+- **Reveal bertahap.** Saat dashboard/riwayat terbuka, elemennya muncul dengan
+  fade-up berurutan. Menghormati `prefers-reduced-motion`.
+- **Empty state berikon.** Keranjang & riwayat kosong kini menampilkan ikon
+  garis lembut di atas teks.
+
 ## [1.3.0] - 2026-06-23
 
 ### Added

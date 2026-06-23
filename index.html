@@ -42,13 +42,13 @@
     <header class="topbar">
       <h2 class="topbar-title">Keranjang</h2>
       <div class="topbar-actions">
-        <button id="btn-history" class="icon-btn" type="button" aria-label="Riwayat">🕘</button>
-        <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan">⚙</button>
+        <button id="btn-history" class="icon-btn" type="button" aria-label="Riwayat" data-icon="clock"></button>
+        <button id="btn-settings" class="icon-btn" type="button" aria-label="Pengaturan" data-icon="settings"></button>
       </div>
     </header>
 
     <ul id="cart-list" class="cart-list"></ul>
-    <p id="cart-empty" class="empty">Keranjang masih kosong.<br />Tap “Tambah Item” untuk mulai scan.</p>
+    <p id="cart-empty" class="empty" data-icon="cart">Keranjang masih kosong.<br />Tap “Tambah Item” untuk mulai scan.</p>
 
     <div class="dash-foot">
       <button id="budget-bar" class="total-budget" type="button">
@@ -61,14 +61,12 @@
         </div>
         <div id="budget-track" class="budget-track" hidden><div id="budget-fill" class="budget-fill"></div></div>
       </button>
-      <div id="quota-indicator" class="quota quota-ok">⚡ Siap</div>
-      <button id="btn-add-item" class="btn btn-primary">📷 Tambah Item</button>
+      <div id="quota-indicator" class="quota quota-ok"></div>
+      <button id="btn-add-item" class="btn btn-primary" data-icon="camera">Tambah Item</button>
       <div class="dash-foot-row">
-        <button id="btn-gallery" class="btn btn-ghost" type="button">🖼 Uji Galeri</button>
         <button id="btn-manual" class="btn btn-ghost" type="button">Input Manual</button>
+        <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
       </div>
-      <button id="btn-finish" class="btn btn-ghost" type="button">Selesai</button>
-      <input id="gallery-input" type="file" accept="image/*" hidden />
     </div>
   </section>
 
@@ -78,8 +76,8 @@
       <button id="btn-history-back" class="icon-btn" type="button" aria-label="Kembali">←</button>
       <h2 class="topbar-title">Riwayat Belanja</h2>
       <div class="topbar-actions">
-        <button id="btn-export-csv" class="icon-btn" type="button" aria-label="Ekspor CSV">⬇</button>
-        <button id="btn-clear-history" class="icon-btn" type="button" aria-label="Hapus Riwayat">🗑</button>
+        <button id="btn-export-csv" class="icon-btn" type="button" aria-label="Ekspor CSV" data-icon="download"></button>
+        <button id="btn-clear-history" class="icon-btn" type="button" aria-label="Hapus Riwayat" data-icon="trash"></button>
       </div>
     </header>
 
@@ -89,7 +87,7 @@
     </div>
 
     <ul id="history-list" class="history-list"></ul>
-    <p id="history-empty" class="empty">Belum ada riwayat belanja.<br />Selesaikan satu belanja untuk menyimpannya di sini.</p>
+    <p id="history-empty" class="empty" data-icon="receipt">Belum ada riwayat belanja.<br />Selesaikan satu belanja untuk menyimpannya di sini.</p>
   </section>
 
   <!-- ============ HALAMAN KAMERA / SCAN ============ -->
@@ -151,7 +149,7 @@
         <div class="stat"><span>Jumlah Item</span><strong id="sum-count">0</strong></div>
         <div class="stat"><span>Total Belanja</span><strong id="sum-total">Rp 0</strong></div>
       </div>
-      <button id="btn-share-summary" class="btn btn-ghost btn-share" type="button">📤 Bagikan Daftar</button>
+      <button id="btn-share-summary" class="btn btn-ghost btn-share" type="button" data-icon="share">Bagikan Daftar</button>
       <div class="sheet-actions">
         <button id="btn-close-summary" class="btn btn-ghost" type="button">Tutup</button>
         <button id="btn-new" class="btn btn-primary" type="button">Belanja Baru</button>
@@ -171,8 +169,10 @@
         <span>Pemakaian hari ini</span>
         <strong id="rpd-counter">0/500</strong>
       </div>
+      <button id="btn-gallery" class="btn btn-ghost" type="button" data-icon="image">Uji dari Galeri</button>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <p class="version">Keranjang Pintar · <span id="app-version">v1.3.0</span> · tanpa backend</p>
+      <input id="gallery-input" type="file" accept="image/*" hidden />
+      <p class="version">Keranjang Pintar · <span id="app-version">v1.4.0</span> · tanpa backend</p>
     </div>
   </div>
 
@@ -224,8 +224,8 @@
         <div class="stat"><span>Total Belanja</span><strong id="hist-detail-total">Rp 0</strong></div>
       </div>
       <div class="hist-detail-actions">
-        <button id="btn-del-hist" class="btn btn-ghost btn-danger" type="button" data-index="-1">🗑 Hapus</button>
-        <button id="btn-share-hist" class="btn btn-ghost btn-share" type="button" data-index="-1">📤 Bagikan</button>
+        <button id="btn-del-hist" class="btn btn-ghost btn-danger" type="button" data-index="-1" data-icon="trash">Hapus</button>
+        <button id="btn-share-hist" class="btn btn-ghost btn-share" type="button" data-index="-1" data-icon="share">Bagikan</button>
       </div>
     </div>
   </div>

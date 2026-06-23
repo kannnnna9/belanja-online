@@ -21,7 +21,11 @@ html, body {
 }
 
 body {
-  background: var(--bg);
+  /* Atmosfer: cahaya aksen lembut menyebar dari atas, memudar ke warna dasar —
+     memberi kedalaman tanpa keluar dari palet "Ungu Lembut". Fixed agar tak
+     ikut bergulir. */
+  background: radial-gradient(135% 78% at 50% -22%, rgba(167, 139, 250, .14), transparent 58%), var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -621,3 +625,64 @@ body {
 }
 .stat span { display: block; color: var(--text-dim); font-size: 13px; margin-bottom: 6px; }
 .stat strong { font-size: 22px; color: var(--accent); }
+
+/* ============================================================
+   IKON SVG (line) — mewarisi warna teks lewat currentColor, jadi
+   selalu senada palet. Menggantikan emoji warna-warni lama.
+   ============================================================ */
+.ic { flex-shrink: 0; vertical-align: -.15em; pointer-events: none; }
+
+/* Indikator kuota: ikon + label sebaris di tengah */
+.quota {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.quota .ic { opacity: .9; }
+
+/* Hint "terakhir dibeli": ikon tag menempel teks */
+.res-hint { display: flex; align-items: center; gap: 6px; }
+
+/* Tombol hapus item di keranjang: ikon trash menggantikan emoji */
+.ci-del { display: inline-flex; align-items: center; justify-content: center; }
+
+/* Dua tombol bertumpuk di sheet pengaturan butuh jarak */
+#sheet-settings #btn-change-key { margin-top: 12px; }
+
+/* Empty state: ikon garis besar lembut di atas teks */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.empty .ic { opacity: .38; }
+
+/* ============================================================
+   GERAK — reveal bertahap saat layar tampil. Toggle [hidden] pada
+   layar memicu ulang animasi anak-anaknya tiap kali dibuka.
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+#screen-dashboard > *,
+#screen-history > * {
+  animation: fadeUp .42s cubic-bezier(.22, .61, .36, 1) both;
+}
+#screen-dashboard > .topbar,
+#screen-history > .topbar        { animation-delay: .02s; }
+#screen-history > .history-stats { animation-delay: .05s; }
+#screen-dashboard > .cart-list,
+#screen-dashboard > .empty,
+#screen-history > .history-list,
+#screen-history > .empty         { animation-delay: .07s; }
+#screen-dashboard > .dash-foot   { animation-delay: .11s; }
+
+/* Hormati preferensi kurangi-gerak: matikan semua reveal & slide. */
+@media (prefers-reduced-motion: reduce) {
+  #screen-dashboard > *,
+  #screen-history > *,
+  .sheet { animation: none; }
+}
