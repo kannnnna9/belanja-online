@@ -5,6 +5,17 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.1.1] - 2026-06-23
+
+### Changed
+
+- Rapikan footer dashboard yang terlalu padat: bar anggaran tidak lagi jadi
+  kotak terpisah, melainkan **menyatu dengan baris Total**. "sisa/lewat Rp X"
+  menempel di bawah angka total dan bar tipis berwarna-tingkat muncul hanya
+  bila anggaran diatur (saat belum diatur, bar disembunyikan dan tampil
+  petunjuk samar "atur anggaran"). Mengurangi satu blok dari footer tanpa
+  mengubah logika anggaran/konfirmasi. ([079a972])
+
 ## [1.1.0] - 2026-06-23
 
 ### Added
@@ -153,7 +164,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...main
+[1.1.1]: https://github.com/kannnnna9/keranjang-pintar/compare/0a8bb61...main
+[1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...0a8bb61
 [1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...4d24410
 [0.5.0]: https://github.com/kannnnna9/keranjang-pintar/commit/57cf85f
 [0.4.0]: https://github.com/kannnnna9/keranjang-pintar/compare/bca2427...main
