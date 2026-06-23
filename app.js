@@ -28,7 +28,7 @@ const HISTORY_STORAGE = 'bco_history';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.0.0';
+const APP_VERSION = 'v1.1.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -37,11 +37,12 @@ const PROMPT = [
 ].join(' ');
 
 /* ---------- State ---------- */
-let cart = [];          // [{ nama, harga }]
+let cart = [];          // [{ nama, harga, qty }]
 let stream = null;      // MediaStream kamera aktif
 let lastShot = null;    // base64 JPEG hasil jepret terakhir (untuk "Ulangi")
 let editIndex = -1;     // indeks item keranjang yang sedang diedit (-1 = tidak ada)
 let sessionSaved = false; // true bila komposisi keranjang ini sudah masuk riwayat
+let budget = 0;         // anggaran sesi ini (Rp); 0 = belum diatur. Per sesi, reset saat belanja baru.
 
 /* ---------- Util DOM ---------- */
 const $ = (id) => document.getElementById(id);
@@ -156,6 +157,17 @@ function wireEvents() {
   // Edit item keranjang
   $('btn-edit-save').addEventListener('click', saveEdit);
   $('btn-edit-cancel').addEventListener('click', () => closeSheet('sheet-edit'));
+
+  // Stepper jumlah (qty) di sheet hasil scan & sheet edit
+  $('res-qty-minus').addEventListener('click', () => bumpQty('res-qty', -1));
+  $('res-qty-plus').addEventListener('click', () => bumpQty('res-qty', +1));
+  $('edit-qty-minus').addEventListener('click', () => bumpQty('edit-qty', -1));
+  $('edit-qty-plus').addEventListener('click', () => bumpQty('edit-qty', +1));
+
+  // Anggaran belanja (per sesi)
+  $('budget-bar').addEventListener('click', openBudget);
+  $('btn-budget-save').addEventListener('click', saveBudget);
+  $('btn-budget-clear').addEventListener('click', clearBudget);
 
   // Kamera
   $('btn-capture').addEventListener('click', capture);
@@ -481,7 +493,19 @@ function showResult(nama, harga, title) {
   $('res-error').hidden = true; // bersihkan error lama
   $('res-nama').value = nama;
   $('res-harga').value = harga;
+  $('res-qty').value = 1; // tiap hasil baru mulai dari 1
   openSheet('sheet-result');
+}
+
+// Naik/turunkan nilai input jumlah, jaga minimal 1.
+function bumpQty(inputId, delta) {
+  const el = $(inputId);
+  const next = Math.max(1, (parseInt(el.value, 10) || 1) + delta);
+  el.value = next;
+}
+// Baca input jumlah jadi integer ≥ 1.
+function readQty(inputId) {
+  return Math.max(1, parseInt($(inputId).value, 10) || 1);
 }
 
 // Tombol "Input Manual" di dashboard → sheet kosong, tanpa kamera.
@@ -492,10 +516,15 @@ function inputManual() {
 function addToCart() {
   const nama = $('res-nama').value.trim();
   const harga = parseInt($('res-harga').value, 10);
+  const qty = readQty('res-qty');
   if (!nama) { $('res-nama').focus(); return; }
   if (isNaN(harga)) { $('res-harga').focus(); return; }
 
-  cart.push({ nama, harga });
+  // Peringatan anggaran: bila item ini bikin total nembus batas, minta
+  // konfirmasi sekali (hanya pada item yang menyebabkan kelewatan).
+  if (!confirmIfOverBudget(harga * qty)) return;
+
+  cart.push({ nama, harga, qty });
   sessionSaved = false; // keranjang berubah → boleh dicatat ulang
   closeSheet('sheet-result');
   $('cam-error').hidden = true;
@@ -513,12 +542,19 @@ function retryScan() {
 /* ============================================================
    KERANJANG
    ============================================================ */
-function cartTotal() { return cart.reduce((s, it) => s + it.harga, 0); }
+// Jumlah unit satu item (kompat data lama tanpa qty → dianggap 1).
+function itemQty(it) { return Math.max(1, it.qty || 1); }
+// Subtotal satu item = harga × jumlah.
+function itemSub(it) { return it.harga * itemQty(it); }
+function cartTotal() { return cart.reduce((s, it) => s + itemSub(it), 0); }
+// Jumlah unit total seluruh keranjang (bukan jumlah baris).
+function cartUnits() { return cart.reduce((s, it) => s + itemQty(it), 0); }
 
 function renderCart() {
   const cc = $('cart-count');
   if (cc) cc.textContent = cart.length;
   $('cart-total').textContent = rupiah(cartTotal());
+  renderBudget();
 
   const list = $('cart-list');
   const empty = $('cart-empty');
@@ -531,15 +567,21 @@ function renderCart() {
   empty.hidden = true;
 
   cart.forEach((it, i) => {
+    const q = itemQty(it);
     const li = document.createElement('li');
     li.className = 'cart-item';
     li.innerHTML = `
       <button class="ci-tap" type="button">
-        <span class="ci-name"></span>
-        <span class="ci-price">${rupiah(it.harga)}</span>
+        <span class="ci-text">
+          <span class="ci-name"></span>
+          <span class="ci-qty"></span>
+        </span>
+        <span class="ci-price">${rupiah(itemSub(it))}</span>
       </button>
       <button class="ci-del" aria-label="Hapus">🗑</button>`;
     li.querySelector('.ci-name').textContent = it.nama;
+    // Tampilkan rincian "qty × harga" hanya bila lebih dari 1 unit.
+    li.querySelector('.ci-qty').textContent = q > 1 ? `${q} × ${rupiah(it.harga)}` : '';
     li.querySelector('.ci-tap').addEventListener('click', () => openEdit(i));
     li.querySelector('.ci-del').addEventListener('click', () => removeItem(i));
     list.appendChild(li);
@@ -557,6 +599,7 @@ function openEdit(i) {
   editIndex = i;
   $('edit-nama').value = cart[i].nama;
   $('edit-harga').value = cart[i].harga;
+  $('edit-qty').value = itemQty(cart[i]);
   openSheet('sheet-edit');
 }
 
@@ -564,9 +607,15 @@ function saveEdit() {
   if (editIndex < 0) return;
   const nama = $('edit-nama').value.trim();
   const harga = parseInt($('edit-harga').value, 10);
+  const qty = readQty('edit-qty');
   if (!nama) { $('edit-nama').focus(); return; }
   if (isNaN(harga)) { $('edit-harga').focus(); return; }
-  cart[editIndex] = { nama, harga };
+
+  // Cek anggaran terhadap selisih subtotal (nilai baru vs lama item ini).
+  const delta = harga * qty - itemSub(cart[editIndex]);
+  if (delta > 0 && !confirmIfOverBudget(delta)) return;
+
+  cart[editIndex] = { nama, harga, qty };
   editIndex = -1;
   sessionSaved = false;
   closeSheet('sheet-edit');
@@ -574,8 +623,102 @@ function saveEdit() {
 }
 
 /* ============================================================
+   ANGGARAN BELANJA (per sesi)
+   Batas belanja sekali pakai. Tak disimpan ke localStorage — hidup
+   selama sesi keranjang, di-reset di newShopping(). Bar di dashboard
+   menunjukkan pemakaian terhadap batas; ambang 80% = "mendekati".
+   ============================================================ */
+const BUDGET_NEAR = 0.8; // ≥80% anggaran terpakai → status "mendekati" (oranye)
+
+function openBudget() {
+  $('budget-input').value = budget > 0 ? budget : '';
+  openSheet('sheet-budget');
+}
+
+function saveBudget() {
+  const val = parseInt($('budget-input').value, 10);
+  budget = isNaN(val) || val <= 0 ? 0 : val; // ≤0 / kosong = anggap tak diatur
+  closeSheet('sheet-budget');
+  renderBudget();
+}
+
+function clearBudget() {
+  budget = 0;
+  closeSheet('sheet-budget');
+  renderBudget();
+}
+
+// Render bar anggaran di dashboard sesuai total keranjang saat ini.
+function renderBudget() {
+  const bar = $('budget-bar');
+  const label = $('budget-label');
+  const remain = $('budget-remain');
+  const fill = $('budget-fill');
+  if (!bar) return;
+
+  if (budget <= 0) {
+    bar.className = 'budget budget-unset';
+    label.textContent = 'Atur Anggaran';
+    remain.textContent = '';
+    fill.style.width = '0';
+    return;
+  }
+
+  const total = cartTotal();
+  const ratio = total / budget;
+  const sisa = budget - total;
+  fill.style.width = Math.min(100, ratio * 100) + '%';
+  label.textContent = `Anggaran ${rupiah(budget)}`;
+
+  let level;
+  if (sisa < 0) {
+    level = 'budget-over';
+    remain.textContent = `lewat ${rupiah(-sisa)}`;
+  } else if (ratio >= BUDGET_NEAR) {
+    level = 'budget-near';
+    remain.textContent = `sisa ${rupiah(sisa)}`;
+  } else {
+    level = 'budget-ok';
+    remain.textContent = `sisa ${rupiah(sisa)}`;
+  }
+  bar.className = 'budget ' + level;
+}
+
+// Dipanggil sebelum menambah/menaikkan nilai keranjang sebesar `tambahan`.
+// Bila anggaran diatur dan penambahan ini MEMBUAT total nembus batas
+// (padahal sebelumnya belum), minta konfirmasi sekali. Return true = lanjut.
+function confirmIfOverBudget(tambahan) {
+  if (budget <= 0) return true;
+  const sebelum = cartTotal();
+  const sesudah = sebelum + tambahan;
+  if (sesudah <= budget) return true;       // masih dalam anggaran → lanjut
+  if (sebelum > budget) return true;         // sudah lewat sejak tadi → jangan nag lagi
+  return confirm(
+    `Item ini bikin total ${rupiah(sesudah)}, lewat anggaran ${rupiah(budget)}.\n` +
+    `Tetap tambahkan?`
+  );
+}
+
+/* ============================================================
    RINGKASAN
    ============================================================ */
+// Baris item read-only untuk ringkasan & detail riwayat: nama (+ "q × harga"
+// bila lebih dari 1) di kiri, subtotal di kanan.
+function lineItem(it) {
+  const q = itemQty(it);
+  const li = document.createElement('li');
+  li.className = 'cart-item';
+  li.innerHTML = `
+    <span class="ci-text">
+      <span class="ci-name"></span>
+      <span class="ci-qty"></span>
+    </span>
+    <span class="ci-price">${rupiah(itemSub(it))}</span>`;
+  li.querySelector('.ci-name').textContent = it.nama;
+  li.querySelector('.ci-qty').textContent = q > 1 ? `${q} × ${rupiah(it.harga)}` : '';
+  return li;
+}
+
 function finishShopping() {
   if (cart.length === 0) return;
 
@@ -588,14 +731,10 @@ function finishShopping() {
   const list = $('summary-list');
   list.innerHTML = '';
   cart.forEach((it) => {
-    const li = document.createElement('li');
-    li.className = 'cart-item';
-    li.innerHTML = `<span class="ci-name"></span><span class="ci-price">${rupiah(it.harga)}</span>`;
-    li.querySelector('.ci-name').textContent = it.nama;
-    list.appendChild(li);
+    list.appendChild(lineItem(it));
   });
 
-  $('sum-count').textContent = cart.length;
+  $('sum-count').textContent = cartUnits();
   $('sum-total').textContent = rupiah(cartTotal());
   openSheet('sheet-summary');
 }
@@ -604,6 +743,7 @@ function newShopping() {
   cart = [];
   lastShot = null;
   sessionSaved = false;
+  budget = 0; // anggaran per sesi → reset saat mulai belanja baru
   closeSheet('sheet-summary');
   renderCart();
 }
@@ -623,7 +763,7 @@ function recordSession() {
   list.unshift({
     ts: Date.now(),
     total: cartTotal(),
-    items: cart.map((it) => ({ nama: it.nama, harga: it.harga })),
+    items: cart.map((it) => ({ nama: it.nama, harga: it.harga, qty: itemQty(it) })),
   });
   localStorage.setItem(HISTORY_STORAGE, JSON.stringify(list));
 }
@@ -663,7 +803,8 @@ function renderHistory() {
       </div>
       <span class="hi-total">${rupiah(sesi.total)}</span>`;
     li.querySelector('.hi-date').textContent = fmtDate(sesi.ts);
-    li.querySelector('.hi-count').textContent = sesi.items.length + ' item';
+    li.querySelector('.hi-count').textContent =
+      sesi.items.reduce((s, it) => s + itemQty(it), 0) + ' item';
     li.addEventListener('click', () => showHistoryDetail(i));
     list.appendChild(li);
   });
@@ -676,15 +817,11 @@ function showHistoryDetail(i) {
   const list = $('hist-detail-list');
   list.innerHTML = '';
   sesi.items.forEach((it) => {
-    const li = document.createElement('li');
-    li.className = 'cart-item';
-    li.innerHTML = `<span class="ci-name"></span><span class="ci-price">${rupiah(it.harga)}</span>`;
-    li.querySelector('.ci-name').textContent = it.nama;
-    list.appendChild(li);
+    list.appendChild(lineItem(it));
   });
 
   $('hist-detail-title').textContent = fmtDate(sesi.ts);
-  $('hist-detail-count').textContent = sesi.items.length;
+  $('hist-detail-count').textContent = sesi.items.reduce((s, it) => s + itemQty(it), 0);
   $('hist-detail-total').textContent = rupiah(sesi.total);
   openSheet('sheet-history-detail');
 }

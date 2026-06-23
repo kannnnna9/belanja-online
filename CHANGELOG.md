@@ -5,6 +5,25 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.1.0] - 2026-06-23
+
+### Added
+
+- **Jumlah (qty) per item.** Tiap item kini punya jumlah, dengan stepper
+  `−  1  +` di sheet hasil scan dan sheet edit. Beli beberapa unit barang yang
+  sama cukup scan sekali lalu set jumlahnya — hemat scan & kuota. Baris
+  keranjang menampilkan `q × harga` (hanya bila >1) dengan subtotal di kanan;
+  total, ringkasan, dan riwayat menghitung `harga × jumlah`. Hitungan "item"
+  kini menghitung total unit, bukan jumlah baris. Item riwayat lama tanpa
+  jumlah otomatis dianggap 1 (tak ada migrasi data).
+- **Anggaran belanja per sesi.** Tombol bar anggaran di dashboard: ketuk untuk
+  set batas (mis. Rp 200.000). Bar mengisi sesuai pemakaian dengan tiga
+  tingkat — ungu (aman), **oranye saat ≥80%** ("sisa Rp X"), **merah saat
+  lewat** ("lewat Rp X"). Saat menambah/menaikkan item yang membuat total
+  menembus batas, muncul konfirmasi sekali (tidak mengulang setelah kadung
+  lewat). Anggaran bersifat per sesi: otomatis ter-reset saat "Belanja Baru",
+  selaras dengan keranjang. Tidak disimpan ke localStorage.
+
 ## [1.0.0] - 2026-06-23
 
 ### Changed
@@ -134,7 +153,8 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   harga di rak lewat kamera, nama dan harga dibaca otomatis oleh Gemini.
   ([a41a163])
 
-[1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...main
+[1.1.0]: https://github.com/kannnnna9/keranjang-pintar/compare/4d24410...main
+[1.0.0]: https://github.com/kannnnna9/keranjang-pintar/compare/57cf85f...4d24410
 [0.5.0]: https://github.com/kannnnna9/keranjang-pintar/commit/57cf85f
 [0.4.0]: https://github.com/kannnnna9/keranjang-pintar/compare/bca2427...main
 [0.3.0]: https://github.com/kannnnna9/keranjang-pintar/compare/ede8107...674a20a

@@ -48,6 +48,13 @@
     <p id="cart-empty" class="empty">Keranjang masih kosong.<br />Tap “Tambah Item” untuk mulai scan.</p>
 
     <div class="dash-foot">
+      <button id="budget-bar" class="budget" type="button">
+        <div class="budget-head">
+          <span id="budget-label">Atur Anggaran</span>
+          <span id="budget-remain"></span>
+        </div>
+        <div class="budget-track"><div id="budget-fill" class="budget-fill"></div></div>
+      </button>
       <div class="total-row">
         <span>Total</span>
         <strong id="cart-total">Rp 0</strong>
@@ -111,6 +118,12 @@
       <input id="res-nama" type="text" class="inp" placeholder="Nama barang" />
       <label class="field-label" for="res-harga">Harga (Rp)</label>
       <input id="res-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
+      <label class="field-label">Jumlah</label>
+      <div class="qty-stepper">
+        <button id="res-qty-minus" class="qty-btn" type="button" aria-label="Kurangi">−</button>
+        <input id="res-qty" type="number" inputmode="numeric" class="inp qty-input" value="1" min="1" />
+        <button id="res-qty-plus" class="qty-btn" type="button" aria-label="Tambah">+</button>
+      </div>
       <div class="sheet-actions">
         <button id="btn-retry" class="btn btn-ghost" type="button">Batal</button>
         <button id="btn-add" class="btn btn-primary" type="button">Tambah ke Keranjang</button>
@@ -147,7 +160,7 @@
         <strong id="rpd-counter">0/500</strong>
       </div>
       <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <p class="version">Keranjang Pintar · <span id="app-version">v1.0.0</span> · tanpa backend</p>
+      <p class="version">Keranjang Pintar · <span id="app-version">v1.1.0</span> · tanpa backend</p>
     </div>
   </div>
 
@@ -159,9 +172,29 @@
       <input id="edit-nama" type="text" class="inp" placeholder="Nama barang" />
       <label class="field-label" for="edit-harga">Harga (Rp)</label>
       <input id="edit-harga" type="number" inputmode="numeric" class="inp" placeholder="0" />
+      <label class="field-label">Jumlah</label>
+      <div class="qty-stepper">
+        <button id="edit-qty-minus" class="qty-btn" type="button" aria-label="Kurangi">−</button>
+        <input id="edit-qty" type="number" inputmode="numeric" class="inp qty-input" value="1" min="1" />
+        <button id="edit-qty-plus" class="qty-btn" type="button" aria-label="Tambah">+</button>
+      </div>
       <div class="sheet-actions">
         <button id="btn-edit-cancel" class="btn btn-ghost" type="button">Batal</button>
         <button id="btn-edit-save" class="btn btn-primary" type="button">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: ATUR ANGGARAN ============ -->
+  <div id="sheet-budget" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <h3 class="sheet-title">Anggaran Belanja</h3>
+      <p class="settings-note">Batas belanja untuk sesi ini. Bar di keranjang ikut sisa anggaranmu. Reset otomatis saat mulai belanja baru.</p>
+      <label class="field-label" for="budget-input">Anggaran (Rp)</label>
+      <input id="budget-input" type="number" inputmode="numeric" class="inp" placeholder="mis. 200000" />
+      <div class="sheet-actions">
+        <button id="btn-budget-clear" class="btn btn-ghost" type="button">Hapus</button>
+        <button id="btn-budget-save" class="btn btn-primary" type="button">Simpan</button>
       </div>
     </div>
   </div>
