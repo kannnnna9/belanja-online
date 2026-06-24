@@ -20,11 +20,24 @@ Alurnya:
 2. Tempel API key, pencet Simpan & Mulai.
 3. Kamu masuk ke halaman keranjang. Ini halaman utamanya, sekaligus tempat liat daftar belanja sama totalnya. Awalnya masih kosong.
 4. Pencet "Tambah Item" buat buka kamera (kasih izin kamera kalau diminta). Arahkan ke label harga, pastiin tulisannya masuk bingkai, terus pencet tombol rana. Tunggu sebentar AI-nya baca.
-5. Cek hasilnya. Kalau nama atau harganya meleset, betulin langsung di situ baru Tambah ke Keranjang. Habis itu balik sendiri ke keranjang, item sama totalnya udah keupdate.
+5. Cek hasilnya. Kalau nama atau harganya meleset, betulin langsung di situ, atur jumlahnya kalau ambil lebih dari satu, baru Tambah ke Keranjang. Habis itu balik sendiri ke keranjang, item sama totalnya udah keupdate.
 6. Ulangi buat barang lain. Atau pakai "Input Manual" kalau mau ketik sendiri tanpa kamera.
-7. Kalau udah kelar, pencet Selesai buat liat ringkasan (jumlah item + total belanja).
+7. Kalau udah kelar, pencet Selesai buat liat ringkasan (jumlah item + total belanja). Begitu ditutup, belanja itu otomatis tersimpan ke Riwayat.
 
-Keranjang nggak disimpan permanen, cuma bertahan selama tab kebuka. Tutup tab, keranjang kosong lagi. API key-nya tetap kesimpen jadi nggak perlu tempel ulang.
+## Yang bisa dilakukan selain scan
+
+- **Input manual** — ketik nama & harga sendiri kalau labelnya susah difoto.
+- **Atur jumlah** — ambil 3 barang yang sama? naikin qty-nya, totalnya ngitung sendiri.
+- **Anggaran** — pasang batas belanja, ada bar yang nunjukin sisa anggaranmu selama belanja.
+- **Riwayat** — tiap belanja yang udah Selesai kesimpen sendiri, lengkap sama statistik "belanja bulan ini". Bisa diekspor ke CSV.
+- **Bagikan daftar** — kirim ringkasan belanja ke WhatsApp atau aplikasi lain.
+- **Bisa dipasang** — dari menu browser pilih "Add to Home Screen", nanti muncul kayak app beneran. Kerangkanya juga di-cache, jadi kebuka cepat walau sinyal lagi lemah (tapi buat scan tetap butuh internet, karena nyambung ke Gemini).
+
+Yang penting dibedain soal "kesimpen":
+
+- **Keranjang yang lagi jalan** cuma bertahan selama tab kebuka. Tutup tab, keranjangnya kosong lagi — ini sengaja, biar tiap belanja mulai bersih.
+- **Riwayat** belanja yang udah kamu Selesai-kan disimpan permanen di browsermu, sampai kamu hapus sendiri.
+- **API key** juga tetap kesimpen, jadi nggak perlu tempel ulang.
 
 ## Ambil API key Gemini (gratis)
 
@@ -53,7 +66,7 @@ Pesan error asli dari Google muncul di panel hasil, warnanya merah. Baca itu bua
 
 Buat kebanyakan orang, cukup pakai link di atas. Tapi kalau kamu pengen punya salinan sendiri, misalnya mau ngoprek kodenya, pakai domain sendiri, atau biar yakin nggak ada kode aneh, caranya gampang:
 
-1. Bikin repo baru, upload isi folder ini (`index.html`, `style.css`, `app.js`, `README.md`).
+1. Bikin repo baru, upload **semua isi folder ini** — jangan cuma sebagian. `manifest.json`, `sw.js`, sama file ikonnya perlu ikut, kalau enggak nanti app nggak bisa dipasang dan ikonnya rusak.
 2. Di Settings > Pages, pilih branch (misal `main`) folder root.
 3. Tunggu URL-nya keluar: `https://NAMA-AKUN.github.io/NAMA-REPO/`.
 4. Buka di HP.
@@ -62,11 +75,19 @@ Buat kebanyakan orang, cukup pakai link di atas. Tapi kalau kamu pengen punya sa
 
 ```
 keranjang-pintar/
-├── index.html   UI + layar setup key
-├── style.css    Tampilan (palet "Ungu Lembut")
-├── app.js       Kamera, panggil Gemini, keranjang, ringkasan
-└── README.md    File ini
+├── index.html      UI semua layar + layar setup key
+├── style.css       Tampilan (palet "Ungu Lembut")
+├── app.js          Kamera, panggil Gemini, keranjang, riwayat, anggaran
+├── manifest.json   Bikin app bisa dipasang sebagai PWA
+├── sw.js           Service worker — cache kerangka app biar buka cepat
+├── icon.svg        Ikon vektor (favicon)
+├── icon-192.png    Ikon PWA 192px
+├── icon-512.png    Ikon PWA 512px
+├── make-icons.py   Resep buat regenerasi dua PNG di atas
+└── README.md       File ini
 ```
+
+`make-icons.py` nggak ikut jalan di app — dia cuma generator yang dipakai sekali buat bikin `icon-192.png` & `icon-512.png`, jadi cuma perlu dijalanin lagi kalau mau ganti ikon. Sisanya (termasuk ikon, manifest, dan service worker) kepakai pas app jalan.
 
 Model AI-nya diatur di konstanta `MODEL` paling atas `app.js`. Sekarang isinya `gemini-3.1-flash-lite`, dipaku ke id stabil (bukan alias `-latest`) karena jatah gratisnya paling longgar dan nggak ikut hot-swap ke rilis ber-limit lebih ketat.
 

@@ -5,6 +5,19 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [Belum Dirilis]
+
+### Dokumentasi
+
+- **README diakuratkan.** Diselaraskan dengan keadaan app sekarang: ditambah
+  bagian fitur (input manual, atur jumlah, anggaran, riwayat + ekspor CSV,
+  bagikan daftar, bisa dipasang sebagai PWA), "Isi folder" dilengkapi jadi
+  10 berkas (sebelumnya cuma 4) plus catatan mana yang dipakai app vs cuma
+  resep ikon, dan petunjuk host sendiri diperbaiki agar `manifest.json`,
+  `sw.js`, serta ikon ikut terunggah. Memperbaiki klaim keliru "keranjang
+  tidak disimpan permanen" — kini dibedakan jelas antara keranjang aktif
+  (sesi), Riwayat (permanen), dan API key (permanen).
+
 ## [1.4.0] - 2026-06-23
 
 ### Changed
