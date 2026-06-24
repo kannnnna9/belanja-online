@@ -2,7 +2,7 @@
 
 Catat belanja pakai kamera. Foto label harga di rak, AI-nya (Google Gemini) baca nama barang sama harganya, langsung masuk keranjang. Tinggal jepret, nggak usah ngetik satu-satu.
 
-Dibuat buat belanja di supermarket dan minimarket — di mana barang ditata di rak dengan label harga.
+Dibuat untuk belanja di supermarket dan minimarket — di mana barang ditata di rak dengan label harga.
 
 Appnya jalan di browser, gratis, tanpa server. Kamu pakai API key Gemini punyamu sendiri, dan key itu cuma disimpan di browsermu.
 
@@ -16,7 +16,7 @@ Pertama kali buka, dia minta API key Gemini (cara dapetnya di bawah, gratis). Te
 
 Alurnya:
 
-1. Buka linknya lewat HP. Harus HTTPS biar kamera bisa nyala, dan link itu udah HTTPS.
+1. Langsung aja buka link di atas.
 2. Tempel API key, pencet Simpan & Mulai.
 3. Kamu masuk ke halaman keranjang. Ini halaman utamanya, sekaligus tempat liat daftar belanja sama totalnya. Awalnya masih kosong.
 4. Pencet "Tambah Item" buat buka kamera (kasih izin kamera kalau diminta). Arahkan ke label harga, pastiin tulisannya masuk bingkai, terus pencet tombol rana. Tunggu sebentar AI-nya baca.
@@ -33,17 +33,17 @@ Alurnya:
 - **Bagikan daftar** — kirim ringkasan belanja ke WhatsApp atau aplikasi lain.
 - **Bisa dipasang** — dari menu browser pilih "Add to Home Screen", nanti muncul kayak app beneran. Kerangkanya juga di-cache, jadi kebuka cepat walau sinyal lagi lemah (tapi buat scan tetap butuh internet, karena nyambung ke Gemini).
 
-Yang penting dibedain soal "kesimpen":
+Hal-hal yang "kesimpen" di browser mu:
 
-- **Keranjang yang lagi jalan** cuma bertahan selama tab kebuka. Tutup tab, keranjangnya kosong lagi — ini sengaja, biar tiap belanja mulai bersih.
+- **Keranjang yang lagi jalan** item yang udah masuk keranjang bakal kesimpen sampai kamu menyelesaikan sesi belanja.
 - **Riwayat** belanja yang udah kamu Selesai-kan disimpan permanen di browsermu, sampai kamu hapus sendiri.
 - **API key** juga tetap kesimpen, jadi nggak perlu tempel ulang.
 
 ## Ambil API key Gemini (gratis)
 
-1. Buka https://aistudio.google.com, login Google.
-2. Klik "Get API Key".
-3. Klik "Create API key", pilih project atau bikin baru.
+1. Buka https://aistudio.google.com, login dengan akun Google kamu.
+2. Buka sidebar di sebelah kiri, klik icon kunci dibagian bawah.
+3. Lalu pada halaman baru, klik "Create API key", pilih project atau bikin baru.
 4. Salin key-nya. Key baru bentuknya diawali `AQ.`.
 5. Tempel ke app.
 
