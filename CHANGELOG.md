@@ -5,7 +5,7 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
-## [Belum Dirilis]
+## [1.4.1] - 2026-06-24
 
 ### Dokumentasi
 
@@ -17,6 +17,15 @@ dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
   `sw.js`, serta ikon ikut terunggah. Memperbaiki klaim keliru "keranjang
   tidak disimpan permanen" — kini dibedakan jelas antara keranjang aktif
   (sesi), Riwayat (permanen), dan API key (permanen).
+- **Bahasa README dirapikan & langkah API key diperjelas.** Beberapa kalimat
+  diperhalus ("buat" → "untuk", langkah pertama alur disederhanakan jadi
+  "langsung buka link di atas"), penjelasan keranjang aktif dipertegas (item
+  bertahan sampai sesi belanja diselesaikan), dan langkah ambil API key Gemini
+  diperinci: login dengan akun Google, buka sidebar kiri → klik ikon kunci di
+  bawah, lalu di halaman baru klik "Create API key".
+- **Tutor halaman setup diselaraskan.** Panduan "Belum punya API key?" di
+  `index.html` mengikuti langkah baru (sidebar → ikon kunci → halaman baru →
+  Create API key), tidak lagi menyebut tombol "Get API Key" yang sudah usang.
 
 ## [1.4.0] - 2026-06-23
 
