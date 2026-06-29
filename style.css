@@ -150,6 +150,26 @@ body {
   line-height: 1.55;
   font-size: 15px;
 }
+
+/* ---------- Layar Selamat Datang (onboarding) ---------- */
+#screen-welcome {
+  justify-content: center;
+  padding: 28px 22px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+.welcome-box { width: 100%; }
+.welcome-box .setup-lead { margin-bottom: 30px; }
+.welcome-btn {
+  text-align: left;
+  justify-content: flex-start;
+  padding: 18px;
+  margin-top: 14px;
+}
+.welcome-btn-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.3; }
+.welcome-btn-text strong { font-size: 16px; }
+.welcome-btn-text small { font-size: 12.5px; font-weight: 600; opacity: .8; }
 .setup-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -353,6 +373,10 @@ body {
   border-color: rgba(252, 165, 165, .35);
   background: rgba(252, 165, 165, .1);
 }
+/* Badge mode demo: tier warna sesuai pemakaian (hijau→kuning→merah, spec §4.2). */
+.quota-demo.demo-ok   { color: #86efac; border-color: rgba(134, 239, 172, .35); background: rgba(134, 239, 172, .08); }
+.quota-demo.demo-warn { color: #fbbf24; border-color: rgba(251, 191, 36, .35);  background: rgba(251, 191, 36, .08); }
+.quota-demo.demo-hot  { color: #fca5a5; border-color: rgba(252, 165, 165, .35); background: rgba(252, 165, 165, .1); }
 
 /* Baris pemakaian harian (RPD) di pengaturan */
 .rpd-row {

@@ -27,9 +27,98 @@ const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
 const CART_STORAGE = 'bco_cart';
 
+/* ---------- Demo Mode (v2.0) ----------
+   3 API key demo dirotasi round-robin (keputusan A & D). Array ini sengaja di
+   paling atas & tanpa obfuscation (keputusan 2): ganti 3 baris di bawah dengan
+   key asli, redeploy — selesai. Obfuscation di static site cuma ilusi; akun
+   nyaris dorman, tak ada yang dirugikan.
+   Bila masih placeholder, scan demo gagal dengan pesan soft; mode key sendiri
+   tetap jalan normal. */
+const DEMO_KEYS = [
+  'AQ.Ab8RN6LJyJFX0jXjPTILIk9XEab7vi6FsExm40NdK5qLCmymzw',
+  'AQ.Ab8RN6IDcPj-WFLcJjgSlTKl2BxK3as2VxSGxGq41p3ZPd18UQ',
+  'AQ.Ab8RN6KOSwTzKVcHgop0_5MfuIRTMn2N8hsNofOXiR2FD9tV6Q',
+];
+const DEMO_DAILY_LIMIT = 50;     // keputusan 1: 50 scan/device/hari
+const DEMO_COOLDOWN_MS = 5000;   // 1 scan / 5 detik / device (cegah RPM 429)
+
+const DEMO_SCAN_KEY = 'kp_demo_scan_count'; // {date, count} scan sukses hari ini (reset harian)
+const ACTIVE_MODE_KEY = 'kp_active_mode';    // 'demo' | 'own_key'
+const DEMO_COOLDOWN_KEY = 'kp_demo_cooldown';// timestamp scan demo terakhir
+const DEMO_RR_KEY = 'kp_demo_rr';            // index giliran round-robin (persist)
+
+/* ---------- Mode aktif ---------- */
+function getActiveMode() { return localStorage.getItem(ACTIVE_MODE_KEY) || ''; }
+function setActiveMode(m) { localStorage.setItem(ACTIVE_MODE_KEY, m); }
+
+/* ---------- Kuota lokal demo (per device, reset harian) ----------
+   Disimpan {date, count}; beda hari → count dianggap 0 (reset). Pakai todayKey()
+   yang sama dengan RPD agar batas hari konsisten. */
+function loadDemoCount() {
+  try {
+    const o = JSON.parse(localStorage.getItem(DEMO_SCAN_KEY));
+    if (o && o.date === todayKey()) return o.count;
+  } catch (_) {}
+  return 0;
+}
+function bumpDemoCount() {
+  localStorage.setItem(DEMO_SCAN_KEY, JSON.stringify({ date: todayKey(), count: loadDemoCount() + 1 }));
+}
+
+/* ---------- Cooldown demo ----------
+   Sisa milidetik sebelum boleh scan lagi (0 = boleh). */
+function demoCooldownLeft() {
+  const last = parseInt(localStorage.getItem(DEMO_COOLDOWN_KEY) || '0', 10);
+  const left = DEMO_COOLDOWN_MS - (Date.now() - last);
+  return left > 0 ? left : 0;
+}
+let demoCdTimer = null;
+function markDemoCooldown() {
+  localStorage.setItem(DEMO_COOLDOWN_KEY, String(Date.now()));
+  // Ticker 1 detik supaya hitung mundur di badge turun mulus, lalu mati sendiri.
+  if (demoCdTimer) clearInterval(demoCdTimer);
+  demoCdTimer = setInterval(() => {
+    renderQuota();
+    if (demoCooldownLeft() <= 0) { clearInterval(demoCdTimer); demoCdTimer = null; }
+  }, 1000);
+}
+
+/* ---------- Gate scan demo ----------
+   Cek kuota lalu cooldown. Return {ok} atau {ok:false, reason, waitSec}. */
+function demoGate() {
+  if (loadDemoCount() >= DEMO_DAILY_LIMIT) return { ok: false, reason: 'quota' };
+  const left = demoCooldownLeft();
+  if (left > 0) return { ok: false, reason: 'cooldown', waitSec: Math.ceil(left / 1000) };
+  return { ok: true };
+}
+
+/* Tangani gate demo gagal. quota → sheet aksi; cooldown → pesan singkat di
+   elemen target (#cam-error saat di kamera). Return true bila boleh scan. */
+function passDemoGateOr(showCooldownIn) {
+  if (getActiveMode() !== 'demo') return true;
+  const g = demoGate();
+  if (g.ok) return true;
+  if (g.reason === 'quota') { openSheet('sheet-demo-block'); return false; }
+  if (showCooldownIn) {
+    const el = $(showCooldownIn);
+    el.textContent = `Tunggu sebentar… ${g.waitSec} detik.`;
+    el.hidden = false;
+  }
+  return false;
+}
+
+/* ---------- Round-robin index (persist menembus refresh) ----------
+   Keputusan D: bagi beban rata antar key. Kembalikan index sekarang, simpan
+   giliran berikutnya. */
+function nextDemoIndex() {
+  const i = (parseInt(localStorage.getItem(DEMO_RR_KEY) || '0', 10)) % DEMO_KEYS.length;
+  localStorage.setItem(DEMO_RR_KEY, String((i + 1) % DEMO_KEYS.length));
+  return i;
+}
+
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.4.2';
+const APP_VERSION = 'v2.0.0';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -176,7 +265,9 @@ function renderQuota() {
   pruneReqTimes();
   const el = $('quota-indicator');
   if (el) {
-    if (limitHit) {
+    if (getActiveMode() === 'demo') {
+      renderDemoBadge(el);
+    } else if (limitHit) {
       el.innerHTML = svgIcon('alert', 16) + '<span>Limit</span>';
       el.className = 'quota quota-limit';
     } else if (reqTimes.length === 0) {
@@ -189,6 +280,19 @@ function renderQuota() {
   }
   const rpd = $('rpd-counter');
   if (rpd) rpd.textContent = `${loadRpd()}/${RPD_LIMIT}`;
+}
+
+/* Badge mode demo: "Demo · N/50 scan" (+ "tunggu N dtk" saat cooldown).
+   Tier warna: hijau <30, kuning 30-40, merah >40 (spec §4.2). */
+function renderDemoBadge(el) {
+  const n = loadDemoCount();
+  const left = demoCooldownLeft();
+  let tier = 'demo-ok';
+  if (n > 40) tier = 'demo-hot';
+  else if (n >= 30) tier = 'demo-warn';
+  const cd = left > 0 ? `, tunggu ${Math.ceil(left / 1000)} dtk` : '';
+  el.innerHTML = svgIcon('cart', 16) + `<span>Demo · ${n}/${DEMO_DAILY_LIMIT} scan${cd}</span>`;
+  el.className = 'quota quota-demo ' + tier;
 }
 
 /* ============================================================
@@ -204,11 +308,20 @@ document.addEventListener('DOMContentLoaded', () => {
   loadReqTimes();
   renderQuota();
   setInterval(renderQuota, 5000);
+  // Pilih layar awal:
+  // - User lama (punya bco_api_key) → migrasi senyap ke own_key, langsung
+  //   dashboard tanpa onboarding (§3.4) — jangan kagetkan/putuskan akses.
+  // - User demo lama (mode tersimpan 'demo') → langsung dashboard demo.
+  // - Selain itu (benar-benar baru) → layar Selamat Datang.
   if (getKey()) {
-    restoreCart(); // pulihkan keranjang & anggaran sesi sebelumnya bila ada
+    if (getActiveMode() !== 'own_key') setActiveMode('own_key');
+    restoreCart();
+    enterDashboard();
+  } else if (getActiveMode() === 'demo') {
+    restoreCart();
     enterDashboard();
   } else {
-    showScreen('screen-setup');
+    showScreen('screen-welcome');
   }
 
   // Daftarkan service worker (PWA: installable + app shell jalan offline).
@@ -219,6 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function wireEvents() {
+  // Welcome / onboarding
+  $('btn-start-demo').addEventListener('click', startDemo);
+  $('btn-start-ownkey').addEventListener('click', () => showScreen('screen-setup'));
+
   // Setup
   $('btn-save-key').addEventListener('click', saveKey);
   $('api-key-input').addEventListener('keydown', (e) => {
@@ -229,7 +346,7 @@ function wireEvents() {
   $('btn-add-item').addEventListener('click', openCamera);
   $('btn-manual').addEventListener('click', inputManual);
   $('btn-finish').addEventListener('click', finishShopping);
-  $('btn-settings').addEventListener('click', () => { renderQuota(); openSheet('sheet-settings'); });
+  $('btn-settings').addEventListener('click', () => { renderQuota(); renderSettings(); openSheet('sheet-settings'); });
   $('btn-history').addEventListener('click', openHistory);
 
   // Uji galeri (dari pengaturan): tutup sheet dulu, lalu pilih gambar dari
@@ -279,6 +396,12 @@ function wireEvents() {
 
   // Pengaturan
   $('btn-change-key').addEventListener('click', changeKey);
+  $('btn-to-ownkey').addEventListener('click', () => { closeSheet('sheet-settings'); showScreen('screen-setup'); });
+  $('btn-to-demo').addEventListener('click', switchToDemo);
+
+  // Sheet kuota demo habis
+  $('btn-demo-manual').addEventListener('click', () => { closeSheet('sheet-demo-block'); inputManual(); });
+  $('btn-demo-ownkey').addEventListener('click', () => { closeSheet('sheet-demo-block'); stopCamera(); showScreen('screen-setup'); });
 
   // Tombol tutup generik (data-close="id")
   document.querySelectorAll('[data-close]').forEach((b) => {
@@ -313,6 +436,7 @@ function saveKey() {
     return;
   }
   localStorage.setItem(KEY_STORAGE, val);
+  setActiveMode('own_key'); // pilih/menetapkan mode key sendiri
   err.hidden = true;
   enterDashboard();
 }
@@ -322,6 +446,30 @@ function changeKey() {
   stopCamera();
   $('api-key-input').value = getKey();
   showScreen('screen-setup');
+}
+
+/* Mulai pakai Demo (dari layar Welcome). Set mode, pulihkan keranjang bila ada,
+   masuk dashboard. */
+function startDemo() {
+  setActiveMode('demo');
+  restoreCart();
+  enterDashboard();
+}
+
+/* Switch own_key → demo (§7). Key user TIDAK dihapus supaya gampang balik.
+   Keranjang & riwayat utuh (storage terpisah). */
+function switchToDemo() {
+  setActiveMode('demo');
+  closeSheet('sheet-settings');
+  enterDashboard();
+}
+
+/* Isi sheet Pengaturan sesuai mode aktif: tampilkan blok demo atau own_key. */
+function renderSettings() {
+  const demo = getActiveMode() === 'demo';
+  $('settings-demo').hidden = !demo;
+  $('settings-ownkey').hidden = demo;
+  if (demo) $('demo-count-label').textContent = `${loadDemoCount()}/${DEMO_DAILY_LIMIT}`;
 }
 
 /* ============================================================
@@ -436,6 +584,7 @@ function capture() {
     $('cam-error').hidden = false;
     return;
   }
+  if (!passDemoGateOr('cam-error')) return; // demo: kuota habis → sheet; cooldown → pesan
   lastShot = cropToBase64(video, computeFrameCrop(video));
   freezeCamera(); // matikan kamera setelah jepret; nyalakan lagi hanya bila jepret ulang
   scanLabel(lastShot);
@@ -447,6 +596,7 @@ function onGalleryPick(e) {
   const file = e.target.files && e.target.files[0];
   e.target.value = ''; // izinkan pilih file sama lagi nanti
   if (!file) return;
+  if (!passDemoGateOr(null)) return; // galeri tak punya cam-error; quota→sheet, cooldown→senyap
   const img = new Image();
   const url = URL.createObjectURL(file);
   img.onload = () => {
@@ -471,12 +621,15 @@ function onGalleryPick(e) {
 const SCAN_TIMEOUTS = [6000, 12000];
 
 async function scanLabel(base64) {
+  const demo = getActiveMode() === 'demo';
+  if (demo) markDemoCooldown(); // spasi antar request konsisten (juga bila scan gagal)
   openSheet('overlay-loading');
   try {
     for (let i = 0; i < SCAN_TIMEOUTS.length; i++) {
       try {
-        const result = await callGemini(base64, SCAN_TIMEOUTS[i]);
+        const result = await callForMode(base64, SCAN_TIMEOUTS[i]);
         closeSheet('overlay-loading');
+        if (demo) { bumpDemoCount(); renderQuota(); } // kuota hanya naik saat sukses
         showResult(result.nama, result.harga);
         return;
       } catch (e) {
@@ -501,7 +654,35 @@ function showResultError(msg) {
   el.hidden = false;
 }
 
-async function callGemini(base64, timeoutMs) {
+/* Rotasi key demo: mulai dari giliran round-robin (keputusan D); kalau key itu
+   429 → skip ke key berikutnya, keliling maksimal 1 putaran penuh. Error non-429
+   (timeout/jaringan/format) dilempar apa adanya supaya retry-timeout di scanLabel
+   tetap berlaku. Satu putaran penuh 429 → semua kuota demo habis (pesan soft). */
+async function callGeminiWithRotation(base64, timeoutMs) {
+  const start = nextDemoIndex();
+  for (let step = 0; step < DEMO_KEYS.length; step++) {
+    const i = (start + step) % DEMO_KEYS.length;
+    try {
+      return await callGemini(DEMO_KEYS[i], base64, timeoutMs);
+    } catch (e) {
+      if (e.status === 429) continue; // key sibuk/penuh → coba berikutnya
+      throw e;                         // selain itu → biar scanLabel yang putuskan
+    }
+  }
+  const err = new Error('Kuota demo habis hari ini. Coba lagi besok atau pakai key sendiri.');
+  err.allExhausted = true;
+  err.permanent = true; // jangan retry timeout; ini memang habis
+  throw err;
+}
+
+/* Pilih jalur panggilan sesuai mode aktif. */
+function callForMode(base64, timeoutMs) {
+  return getActiveMode() === 'demo'
+    ? callGeminiWithRotation(base64, timeoutMs)
+    : callGemini(getKey(), base64, timeoutMs);
+}
+
+async function callGemini(apiKey, base64, timeoutMs) {
   const url = `${API_BASE}/${MODEL}:generateContent`;
   const body = {
     contents: [
@@ -533,8 +714,9 @@ async function callGemini(base64, timeoutMs) {
       headers: {
         'Content-Type': 'application/json',
         // Key dikirim via header (wajib untuk key format baru "AQ.",
-        // dan tetap kompatibel dengan key lama "AIza").
-        'x-goog-api-key': getKey(),
+        // dan tetap kompatibel dengan key lama "AIza"). Key di-pass sebagai
+        // argumen supaya rotation demo bisa menukar key tiap percobaan.
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify(body),
       signal: ctrl.signal,
@@ -555,6 +737,7 @@ async function callGemini(base64, timeoutMs) {
       if (j.error && j.error.message) msg = j.error.message;
     } catch (_) {}
     const err = new Error(msg);
+    err.status = res.status; // dipakai rotation demo untuk deteksi 429
     // 4xx selain 429 = permanen (key/referrer/format) → jangan retry.
     // 429 (kuota) & 5xx (server) = sementara → boleh retry.
     err.permanent = res.status >= 400 && res.status < 500 && res.status !== 429;

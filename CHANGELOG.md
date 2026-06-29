@@ -5,6 +5,42 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [2.0.0] - 2026-06-29
+
+### Ditambahkan
+
+- **Demo Mode — langsung scan tanpa API key sendiri.** User baru kini bisa
+  mencoba seketika lewat tombol "Mulai dengan Demo" di layar Selamat Datang
+  baru. Di balik layar, 3 API key demo dirotasi **round-robin** (bagi beban
+  rata antar key); bila satu key kena 429, request lompat ke key berikutnya
+  (maksimal satu putaran). Membagi beban rata membuat tiap key jarang mentok
+  RPM — pola terlihat wajar, paling aman dari ban.
+- **Onboarding baru (layar Selamat Datang).** Dua pilihan: "Mulai dengan Demo"
+  (tombol utama, mencolok) dan "Pakai API Key Sendiri" (sekunder). Demo jadi
+  jalur utama; key sendiri tetap tersedia untuk pemakaian tak terbatas.
+- **Kuota lokal demo: 50 scan/perangkat/hari + cooldown 5 detik.** Mencegah
+  pemakaian berlebih dan menjaga RPM tiap key tetap aman. Badge demo di
+  dashboard menampilkan "Demo · N/50 scan" dengan warna hijau (<30), kuning
+  (30–40), merah (>40), serta hitung mundur cooldown.
+- **Pindah mode dua arah.** Dari pengaturan bisa "Ganti ke Key Sendiri" atau
+  "Ganti ke Demo" kapan saja; keranjang & riwayat tetap utuh saat berpindah.
+- **Pesan saat kuota habis** bernada ramah ("Kuota demo habis hari ini. Coba
+  lagi besok atau pakai key sendiri.") dengan aksi Input Manual / Pakai Key
+  Sendiri.
+
+### Diubah
+
+- `callGemini` kini menerima API key sebagai argumen (sebelumnya selalu
+  membaca key tersimpan), supaya rotasi key demo bisa menukar key per
+  percobaan. Mode key sendiri memanggilnya dengan key user — perilaku tak
+  berubah bagi mereka.
+
+### Catatan migrasi
+
+- **User lama termigrasi senyap.** Yang sudah punya API key tersimpan langsung
+  masuk dashboard mode "key sendiri" seperti biasa — tanpa melihat layar
+  onboarding baru, tanpa kehilangan akses. Tidak ada breaking change bagi user.
+
 ## [1.4.2] - 2026-06-29
 
 ### Diperbaiki

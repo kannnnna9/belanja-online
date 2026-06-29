@@ -12,6 +12,22 @@
 </head>
 <body>
 
+  <!-- ============ HALAMAN SELAMAT DATANG (onboarding baru) ============ -->
+  <section id="screen-welcome" class="screen" hidden>
+    <div class="welcome-box">
+      <h1 class="brand">Keranjang <span>Pintar</span></h1>
+      <p class="setup-lead">Catat belanja pakai kamera — AI baca nama &amp; harga otomatis.</p>
+
+      <button id="btn-start-demo" class="btn btn-primary welcome-btn" type="button" data-icon="zap">
+        <span class="welcome-btn-text"><strong>Mulai dengan Demo</strong><small>Langsung pakai, tanpa daftar.</small></span>
+      </button>
+
+      <button id="btn-start-ownkey" class="btn btn-ghost welcome-btn" type="button" data-icon="tag">
+        <span class="welcome-btn-text"><strong>Pakai API Key Sendiri</strong><small>Gratis dari Google AI Studio.</small></span>
+      </button>
+    </div>
+  </section>
+
   <!-- ============ HALAMAN SETUP API KEY ============ -->
   <section id="screen-setup" class="screen">
     <div class="setup-box">
@@ -165,15 +181,28 @@
         <h3 class="sheet-title">Pengaturan</h3>
         <button class="icon-btn" type="button" data-close="sheet-settings" aria-label="Tutup">✕</button>
       </div>
-      <p class="settings-note">API key tersimpan di browser ini saja.</p>
-      <div class="rpd-row">
-        <span>Pemakaian hari ini</span>
-        <strong id="rpd-counter">0/500</strong>
+
+      <!-- Mode DEMO -->
+      <div id="settings-demo" hidden>
+        <div class="rpd-row"><span>Mode</span><strong>Demo</strong></div>
+        <div class="rpd-row"><span>Scan hari ini</span><strong id="demo-count-label">0/50</strong></div>
+        <button id="btn-to-ownkey" class="btn btn-ghost" type="button" data-icon="tag">Ganti ke Key Sendiri</button>
       </div>
-      <button id="btn-gallery" class="btn btn-ghost" type="button" data-icon="image">Uji dari Galeri</button>
-      <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
-      <input id="gallery-input" type="file" accept="image/*" hidden />
-      <p class="version">Keranjang Pintar · <span id="app-version">v1.4.2</span> · tanpa backend</p>
+
+      <!-- Mode KEY SENDIRI -->
+      <div id="settings-ownkey" hidden>
+        <p class="settings-note">API key tersimpan di browser ini saja.</p>
+        <div class="rpd-row">
+          <span>Pemakaian hari ini</span>
+          <strong id="rpd-counter">0/500</strong>
+        </div>
+        <button id="btn-gallery" class="btn btn-ghost" type="button" data-icon="image">Uji dari Galeri</button>
+        <button id="btn-change-key" class="btn btn-ghost" type="button">Ganti API Key</button>
+        <button id="btn-to-demo" class="btn btn-ghost" type="button" data-icon="zap">Ganti ke Demo</button>
+        <input id="gallery-input" type="file" accept="image/*" hidden />
+      </div>
+
+      <p class="version">Keranjang Pintar · <span id="app-version">v2.0.0</span> · tanpa backend</p>
     </div>
   </div>
 
@@ -208,6 +237,18 @@
       <div class="sheet-actions">
         <button id="btn-budget-clear" class="btn btn-ghost" type="button">Hapus</button>
         <button id="btn-budget-save" class="btn btn-primary" type="button">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SHEET: KUOTA DEMO HABIS (pesan soft) ============ -->
+  <div id="sheet-demo-block" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <h3 class="sheet-title">Kuota Demo Habis</h3>
+      <p class="settings-note">Kuota demo habis hari ini. Coba lagi besok atau pakai API key sendiri (gratis dari Google AI Studio).</p>
+      <div class="sheet-actions">
+        <button id="btn-demo-manual" class="btn btn-ghost" type="button">Input Manual</button>
+        <button id="btn-demo-ownkey" class="btn btn-primary" type="button">Pakai Key Sendiri</button>
       </div>
     </div>
   </div>
