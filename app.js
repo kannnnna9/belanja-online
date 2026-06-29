@@ -29,7 +29,7 @@ const CART_STORAGE = 'bco_cart';
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v1.4.1';
+const APP_VERSION = 'v1.4.2';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',

@@ -302,6 +302,17 @@ body {
    ============================================================ */
 .topbar-spacer { width: 40px; }
 
+/* Tinggi PAS layar (bukan min-height) khusus dashboard & riwayat: dengan
+   tinggi pasti, anak flex `.cart-list`/`.history-list` (flex:1 + overflow
+   auto) bergulir di dalam, sementara header (.topbar) & footer (.dash-foot)
+   tetap diam. Tanpa ini, min-height:100dvh membuat seluruh section memanjang
+   saat item banyak, menggeser footer keluar layar. */
+#screen-dashboard,
+#screen-history {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 #screen-dashboard .cart-list {
   padding: 0 18px;
   margin: 8px 0;

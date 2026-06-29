@@ -5,6 +5,21 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.4.2] - 2026-06-29
+
+### Diperbaiki
+
+- **Header & footer dashboard kini terkunci, hanya daftar yang bergulir.**
+  Saat keranjang panjang (mis. 39 item belanja), seluruh halaman ikut
+  memanjang sehingga tombol "Tambah Item" & footer terdorong keluar layar —
+  harus geser ke bawah dulu untuk menambah item. Penyebab: `.screen` memakai
+  `min-height: 100dvh` sehingga section memanjang mengikuti isi, membuat
+  `overflow-y: auto` pada `.cart-list` tak pernah aktif. Diperbaiki dengan
+  memberi tinggi pasti `height: 100dvh` + `overflow: hidden` khusus
+  `#screen-dashboard` & `#screen-history`, sehingga topbar dan footer diam
+  sementara hanya daftar isi yang bergulir di dalam. Berlaku juga untuk daftar
+  Riwayat yang panjang.
+
 ## [1.4.1] - 2026-06-24
 
 ### Dokumentasi

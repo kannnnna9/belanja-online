@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+
+# Rancangan/dokumen internal — tidak ikut repo & GitHub Pages
+docs/
