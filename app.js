@@ -27,18 +27,17 @@ const KEY_STORAGE = 'bco_api_key';
 const HISTORY_STORAGE = 'bco_history';
 const CART_STORAGE = 'bco_cart';
 
-/* ---------- Demo Mode (v2.0) ----------
-   3 API key demo dirotasi round-robin (keputusan A & D). Array ini sengaja di
-   paling atas & tanpa obfuscation (keputusan 2): ganti 3 baris di bawah dengan
-   key asli, redeploy — selesai. Obfuscation di static site cuma ilusi; akun
-   nyaris dorman, tak ada yang dirugikan.
-   Bila masih placeholder, scan demo gagal dengan pesan soft; mode key sendiri
-   tetap jalan normal. */
-const DEMO_KEYS = [
-  'AQ.Ab8RN6LJyJFX0jXjPTILIk9XEab7vi6FsExm40NdK5qLCmymzw',
-  'AQ.Ab8RN6IDcPj-WFLcJjgSlTKl2BxK3as2VxSGxGq41p3ZPd18UQ',
-  'AQ.Ab8RN6KOSwTzKVcHgop0_5MfuIRTMn2N8hsNofOXiR2FD9tV6Q',
-];
+/* ---------- Demo Mode (v2.0 → DIMATIKAN v2.0.1) ----------
+   3 API key demo yang dulu di-hardcode di sini DICABUT OTOMATIS oleh Google
+   karena terdeteksi di repo publik (risiko yang sudah diantisipasi waktu rilis
+   v2.0). Pelajaran: key di sisi-client TIDAK bisa bertahan di static site
+   publik — apa pun yang ditaruh di sini akan discan & dicabut lagi, biasanya
+   dalam hitungan menit–jam. Demo dimatikan lewat DEMO_AVAILABLE sampai ada
+   proxy serverless (key disimpan sebagai secret di server, tak pernah ke
+   browser). BYOK (key sendiri) tetap jalan normal. Kode demo dibiarkan utuh
+   agar mudah dihidupkan lagi lewat proxy nanti. */
+const DEMO_AVAILABLE = false;    // kill-switch: false = app BYOK-only (v2.0.1)
+const DEMO_KEYS = [];            // dikosongkan; key lama sudah mati. Nanti diisi server, bukan di file ini.
 const DEMO_DAILY_LIMIT = 50;     // keputusan 1: 50 scan/device/hari
 const DEMO_COOLDOWN_MS = 5000;   // 1 scan / 5 detik / device (cegah RPM 429)
 
@@ -118,7 +117,7 @@ function nextDemoIndex() {
 
 // Versi aplikasi. Satu sumber kebenaran: teks versi di halaman pengaturan
 // diisi dari sini saat init, jadi cukup ubah angka ini tiap rilis.
-const APP_VERSION = 'v2.0.0';
+const APP_VERSION = 'v2.0.1';
 
 const PROMPT = [
   'Baca teks pada label harga ini.',
@@ -301,6 +300,7 @@ function renderDemoBadge(el) {
 document.addEventListener('DOMContentLoaded', () => {
   wireEvents();
   hydrateIcons(); // sisipkan SVG ke semua tombol [data-icon] statis
+  applyDemoAvailability(); // v2.0.1: sembunyikan jalan-masuk demo bila DEMO_AVAILABLE=false
   const ver = $('app-version');
   if (ver) ver.textContent = APP_VERSION;
   // Pulihkan hitungan RPM dari sesi sebelumnya (timestamp >60s dibuang),
@@ -311,16 +311,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pilih layar awal:
   // - User lama (punya bco_api_key) → migrasi senyap ke own_key, langsung
   //   dashboard tanpa onboarding (§3.4) — jangan kagetkan/putuskan akses.
-  // - User demo lama (mode tersimpan 'demo') → langsung dashboard demo.
+  // - User demo lama (mode tersimpan 'demo') → dashboard demo HANYA bila demo
+  //   masih aktif; sejak v2.0.1 demo mati → bersihkan mode & arahkan ke Welcome
+  //   supaya user pasang API key sendiri (key demo lama sudah dicabut Google).
   // - Selain itu (benar-benar baru) → layar Selamat Datang.
   if (getKey()) {
     if (getActiveMode() !== 'own_key') setActiveMode('own_key');
     restoreCart();
     enterDashboard();
-  } else if (getActiveMode() === 'demo') {
+  } else if (DEMO_AVAILABLE && getActiveMode() === 'demo') {
     restoreCart();
     enterDashboard();
   } else {
+    if (getActiveMode() === 'demo') setActiveMode(''); // buang mode demo basi
     showScreen('screen-welcome');
   }
 
@@ -449,19 +452,34 @@ function changeKey() {
 }
 
 /* Mulai pakai Demo (dari layar Welcome). Set mode, pulihkan keranjang bila ada,
-   masuk dashboard. */
+   masuk dashboard. Sejak v2.0.1 demo mati → fallback ke setup key sendiri. */
 function startDemo() {
+  if (!DEMO_AVAILABLE) { showScreen('screen-setup'); return; }
   setActiveMode('demo');
   restoreCart();
   enterDashboard();
 }
 
 /* Switch own_key → demo (§7). Key user TIDAK dihapus supaya gampang balik.
-   Keranjang & riwayat utuh (storage terpisah). */
+   Keranjang & riwayat utuh (storage terpisah). No-op bila demo dimatikan. */
 function switchToDemo() {
+  if (!DEMO_AVAILABLE) return;
   setActiveMode('demo');
   closeSheet('sheet-settings');
   enterDashboard();
+}
+
+/* v2.0.1: bila demo dimatikan (DEMO_AVAILABLE=false), sembunyikan semua jalan
+   masuk demo dan jadikan "Pakai API Key Sendiri" CTA utama di layar Welcome.
+   Dikontrol satu flag → tinggal balik ke true saat proxy serverless siap. */
+function applyDemoAvailability() {
+  if (DEMO_AVAILABLE) return;
+  const demoBtn = $('btn-start-demo');
+  if (demoBtn) demoBtn.hidden = true;            // Welcome: sembunyikan tombol Demo
+  const toDemo = $('btn-to-demo');
+  if (toDemo) toDemo.hidden = true;              // Pengaturan: sembunyikan "Ganti ke Demo"
+  const own = $('btn-start-ownkey');
+  if (own) { own.classList.remove('btn-ghost'); own.classList.add('btn-primary'); } // promosikan BYOK jadi CTA utama
 }
 
 /* Isi sheet Pengaturan sesuai mode aktif: tampilkan blok demo atau own_key. */

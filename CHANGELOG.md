@@ -5,6 +5,30 @@ Semua perubahan penting pada proyek ini dicatat di berkas ini.
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.1.0/),
 dan proyek ini menganut [Semantic Versioning](https://semver.org/lang/id/).
 
+## [2.0.1] - 2026-06-30
+
+### Diubah / Keamanan
+
+- **Demo Mode dimatikan sementara.** Ketiga API key demo yang di-hardcode di
+  `app.js` pada v2.0 **dicabut otomatis oleh Google** karena terdeteksi di repo
+  publik (risiko yang sudah diantisipasi). Konsekuensinya Demo Mode tak bisa
+  jalan, jadi dimatikan lewat satu kill-switch `DEMO_AVAILABLE = false` agar app
+  LIVE tak menampilkan fitur yang rusak. Aplikasi kini **BYOK-only**: tiap user
+  pakai API key Gemini sendiri (gratis dari Google AI Studio).
+- **Key mati dibuang dari kode sumber.** `DEMO_KEYS` dikosongkan; tidak ada lagi
+  kredensial di repo.
+- **Pelajaran arsitektur:** key di sisi-client tidak bisa bertahan di static
+  site publik — apa pun yang ditaruh di sana akan discan & dicabut lagi. Demo
+  akan dihidupkan lagi nanti lewat **proxy serverless** (key jadi secret di
+  server, tak pernah sampai ke browser). Kode demo dibiarkan utuh agar tinggal
+  membalik kill-switch saat proxy siap.
+
+### Migrasi
+
+- User yang sebelumnya berada di Demo Mode (tanpa key sendiri) kini diarahkan ke
+  layar Selamat Datang untuk memasang API key sendiri. Keranjang & riwayat tetap
+  utuh (storage terpisah). User lama yang sudah punya key tak terpengaruh.
+
 ## [2.0.0] - 2026-06-29
 
 ### Ditambahkan
